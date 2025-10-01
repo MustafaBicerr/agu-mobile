@@ -1,0 +1,2 @@
+C:/Users/teknosa/Desktop/Mobile Programming/agu-mobile/android/app/.cxx/Debug/r1m25383/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/teknosa/Desktop/Mobile Programming/agu-mobile/android/app/.cxx/Debug/r1m25383/x86_64/CMakeFiles/rebuild_cache.dir

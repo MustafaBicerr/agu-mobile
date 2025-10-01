@@ -3,24 +3,21 @@ import java.io.FileInputStream
 
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
+    id "com.google.gms.google-services"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
+def hasKeystoreProps = keystorePropertiesFile.exists()
+if (hasKeystoreProps) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-
 android {
     namespace = "com.agu.agumobile"
-    compileSdk = 36 // Flutter'ın otomatik ayarını geçersiz kılar ve SDK 35'i kullanır.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -28,54 +25,60 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8 }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.agu.agumobile"
-        // Minimum SDK sürümünü ayarlayın
+        applicationId "com.agu.agumobile"
         // minSdkVersion flutter.minSdkVersion
         minSdk 23
-        targetSdk = 35 // Flutter'ın otomatik ayarını geçersiz kılar ve SDK 35'i kullanır.
-        versionCode 8     //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
-        versionName "1.0.7" //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
+        targetSdk 35
+        versionCode 8
+        versionName "1.0.7"
 
-        ndk {
-        abiFilters 'armeabi-v7a','arm64-v8a','x86_64'
-    }
+        ndk { abiFilters 'armeabi-v7a','arm64-v8a','x86_64' }
     }
 
     signingConfigs {
-    release {
-        keyAlias = keystoreProperties['keyAlias']
-        keyPassword = keystoreProperties['keyPassword']
-        storeFile = file(keystoreProperties['storeFile'])
-        storePassword = keystoreProperties['storePassword']
-    }
-}
+        // Debug keystore her zaman mevcut
+        debug {
+            storeFile file("${System.properties['user.home']}/.android/debug.keystore")
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
 
+        if (hasKeystoreProps) {
+            release {
+                def sf = keystoreProperties['storeFile']
+                if (sf == null || sf.trim().isEmpty()) {
+                    throw new GradleException("key.properties içinde storeFile tanımlı değil veya boş!")
+                }
+                storeFile file(sf)
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
 
     buildTypes {
-    release {
-        signingConfig = signingConfigs.release
-        minifyEnabled false
-        shrinkResources false
-        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            // key.properties yoksa release de debug imzası ile derlesin (local/CI kırılmasın)
+            signingConfig hasKeystoreProps ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
     }
-}
-
 }
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 }
 
-
 flutter {
     source = "../.."
 }
-
-//
