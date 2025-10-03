@@ -1,7 +1,9 @@
 import 'dart:core';
 
 import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/utilts/services/database_matching_service.dart';
 import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 class Dbhelper {
@@ -86,7 +88,162 @@ class Dbhelper {
   void deleteDatabaseFile() async {
     String dbPath = join(await getDatabasesPath(), "timeTable.db");
     Database db = await openDatabase(dbPath);
-    await db.delete("timeTable");
+    // await db.delete("timeTable");
+    await db.delete("lessons");
     await db.close(); // Veritabanını tamamen sil
+  }
+}
+
+// Dbhelper içine ekle (sqflite import'ları zaten var kabul ediyorum).
+// Amaç: Aynı dersi (mantıksal olarak) DB'de varsa INSERT etme.
+
+extension _StringNorm on String {
+  String norm() => trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+class DedupHelpers {
+  // Bellek içi anahtar: name|day|hour1|hour2|place|teacher
+  static String lessonKey({
+    required String name,
+    required String day,
+    String? hour1,
+    String? hour2,
+    required String place,
+    required String teacher,
+  }) {
+    return [
+      name.norm().toUpperCase(),
+      day.norm().toUpperCase(),
+      (hour1 ?? '').norm().toUpperCase(),
+      (hour2 ?? '').norm().toUpperCase(),
+      place.norm().toUpperCase(),
+      teacher.norm().toUpperCase(),
+    ].join('|');
+  }
+}
+
+extension DbhelperDedup on Dbhelper {
+  /// DB'de bu ders zaten varsa true döner (tam eşleşme).
+  Future<bool> lessonExists({
+    required String name,
+    required String day,
+    String? hour1,
+    String? hour2,
+    required String place,
+    required String teacher,
+  }) async {
+    final Database d = await db;
+    final res = await d.rawQuery(
+      '''
+      SELECT 1 
+      FROM lessons 
+      WHERE name = ? AND day = ?
+        AND IFNULL(hour1,'') = ?
+        AND IFNULL(hour2,'') = ?
+        AND place = ? AND teacher = ?
+      LIMIT 1
+      ''',
+      [
+        name.trim(),
+        day.trim(),
+        (hour1 ?? '').trim(),
+        (hour2 ?? '').trim(),
+        place.trim(),
+        teacher.trim(),
+      ],
+    );
+    return res.isNotEmpty;
+  }
+
+  /// Tek dersi: yoksa ekler, varsa atlar. attendance/isProcessed korunmuş olur.
+  /// true => insert edildi, false => skip edildi.
+  Future<bool> insertIfNotExistsPreserveAttendance(Lesson l) async {
+    final exists = await lessonExists(
+      name: l.name ?? '', // modeline göre uyarlayabilirsin
+      day: l.day ?? '',
+      hour1: l.hour1,
+      hour2: l.hour2,
+      place: l.place ?? '',
+      teacher: l.teacher ?? '',
+    );
+    if (exists) return false;
+
+    final Database d = await db;
+    // Burada kendi insert(Lesson) metodunu da çağırabilirsin:
+    // return await insert(l) > 0;
+    // Eğer elle yazacaksan:
+    final data = {
+      'name': l.name,
+      'place': l.place,
+      'day': l.day,
+      'hour1': l.hour1,
+      'hour2': l.hour2,
+      'teacher': l.teacher,
+      'attendance': l.attendance ?? 0,
+      'isProcessed': l.isProcessed ?? 0,
+    };
+    await d.insert(
+        'lessons', data /*, conflictAlgorithm: ConflictAlgorithm.ignore*/);
+    return true;
+  }
+
+  /// Toplu ekleme: önce RAM'de aynı dersleri ayıklar, sonra DB'de var mı bakıp ekler.
+  /// Dönen değer: gerçekten eklenen kayıt sayısı.
+  Future<int> insertManyIfNotExistsPreserveAttendance(
+      List<Lesson> lessons) async {
+    // 1) RAM dedup
+    final seen = <String>{};
+    final unique = <Lesson>[];
+    for (final l in lessons) {
+      final key = DedupHelpers.lessonKey(
+        name: l.name ?? '',
+        day: l.day ?? '',
+        hour1: l.hour1,
+        hour2: l.hour2,
+        place: l.place ?? '',
+        teacher: l.teacher ?? '',
+      );
+      if (seen.add(key)) unique.add(l);
+    }
+
+    // 2) DB dedup (transaction ile hizlandir)
+    final Database d = await db;
+    int inserted = 0;
+    await d.transaction((txn) async {
+      for (final l in unique) {
+        final rows = await txn.rawQuery(
+          '''
+          SELECT 1 FROM lessons 
+          WHERE name = ? AND day = ?
+            AND IFNULL(hour1,'') = ?
+            AND IFNULL(hour2,'') = ?
+            AND place = ? AND teacher = ?
+          LIMIT 1
+          ''',
+          [
+            (l.name ?? '').trim(),
+            (l.day ?? '').trim(),
+            (l.hour1 ?? '').trim(),
+            (l.hour2 ?? '').trim(),
+            (l.place ?? '').trim(),
+            (l.teacher ?? '').trim(),
+          ],
+        );
+        if (rows.isEmpty) {
+          await txn.insert('lessons', {
+            'name': l.name,
+            'place': l.place,
+            'day': l.day,
+            'hour1': l.hour1,
+            'hour2': l.hour2,
+            'teacher': l.teacher,
+            'attendance': l.attendance ?? 0,
+            'isProcessed': l.isProcessed ?? 0,
+          });
+          inserted++;
+        }
+      }
+    });
+    return inserted;
   }
 }

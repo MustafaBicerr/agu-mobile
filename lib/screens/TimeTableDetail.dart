@@ -4,7 +4,7 @@ import 'package:home_page/LessonAdd.dart';
 import 'package:home_page/bottom.dart';
 import 'package:home_page/screens/sisAddLessonsPage.dart';
 
-import 'package:home_page/screens/sisLoginPage.dart';
+import 'package:home_page/screens/sis_webview_login.dart';
 
 import 'package:home_page/utilts/services/dbHelper.dart';
 import 'package:home_page/utilts/models/lesson.dart';
@@ -48,12 +48,23 @@ class _TimetabledetailState extends State<Timetabledetail> {
       bottomNavigationBar: bottomBar2(context, 0), // Alt gezinme çubuğu
 
       appBar: AppBar(
-        title: const Text("Ders Programı"),
+        leading: Container(),
+        title: const Text(
+          "Ders Programı",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         centerTitle: true,
         actions: [
           PopupMenuButton<String>(
             offset: const Offset(0, 40),
+            shadowColor: Colors.black,
+            iconColor: Colors.black,
+            color: Colors.white,
+            elevation: 8.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               if (value == "delete") {
@@ -61,36 +72,50 @@ class _TimetabledetailState extends State<Timetabledetail> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: const Text("Uyarı"),
+                      title: const Text("Uyarı",
+                          style: TextStyle(color: Colors.red)),
+                      backgroundColor: Colors.blueGrey[900],
                       content: const Text(
-                          "Dersleri gerçekten silmek istediğinize emin misiniz?"),
+                          "Dersleri gerçekten silmek istediğinize emin misiniz?",
+                          style: TextStyle(color: Colors.white)),
                       actions: [
                         TextButton(
                             onPressed: Navigator.of(context).pop,
-                            child: const Text("Hayır")),
+                            child: const Text("Hayır",
+                                style: TextStyle(color: Colors.green))),
                         TextButton(
-                            onPressed: () {
-                              dbHelper.deleteDatabaseFile();
-                              Navigator.pop(context);
+                          child: const Text("Evet",
+                              style: TextStyle(color: Colors.red)),
+                          onPressed: () {
+                            dbHelper.deleteDatabaseFile();
+                            Navigator.pop(context);
 
-                              showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Bilgilendirme"),
-                                      content: const Text(
-                                          "İşleminiz gerçekleştirilmiştir, ekranı yenileyiniz."),
-                                      actions: [
-                                        TextButton(
-                                          child: const Text("Tamam"),
-                                          onPressed: () =>
-                                              Navigator.pop(context),
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    backgroundColor: Colors.blueGrey[900],
+                                    title: const Text(
+                                      "Bilgilendirme",
+                                      style: TextStyle(color: Colors.amber),
+                                    ),
+                                    content: const Text(
+                                        "Tüm dersler silindi. Ders eklemek için sağ alt köşedeki '+' butonuna basabilirsiniz.",
+                                        style: TextStyle(color: Colors.white)),
+                                    actions: [
+                                      TextButton(
+                                        child: const Text(
+                                          "Tamam",
+                                          style: TextStyle(color: Colors.green),
                                         ),
-                                      ],
-                                    );
-                                  });
-                            },
-                            child: const Text("Evet")),
+                                        onPressed: () => methods.navigateToPage(
+                                            context, Timetabledetail()),
+                                      ),
+                                    ],
+                                  );
+                                });
+                          },
+                        ),
                       ],
                     );
                   },
@@ -146,7 +171,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
               _showFabMenu(fabContext, position);
             },
             child: Icon(Icons.add),
-            backgroundColor: Colors.lightBlueAccent,
+            backgroundColor: Colors.lightBlueAccent[400],
           );
         },
       ),
@@ -159,32 +184,47 @@ class _TimetabledetailState extends State<Timetabledetail> {
 
     showMenu(
       context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(position, position),
-        Offset.zero & overlay.size,
+      position: RelativeRect.fromLTRB(
+          position.dx, position.dy - 25, overlay.size.width - position.dx, 0),
+      // position: RelativeRect.fromRect(
+      //   Rect.fromPoints(position, position),
+      //   Offset.zero & overlay.size,
+      // ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
       ),
       items: [
         PopupMenuItem(
           child: ListTile(
-            title: const Text('Manuel Ekle (Bölüm)'),
+            leading: const Icon(Icons.cloud_download, color: Colors.blue),
+            title: const Text("SİS'ten Otomatik Çek",
+                style: TextStyle(fontWeight: FontWeight.w500)),
+            subtitle: const Text(
+              "Bölümdekiler için tavsiye edilir.",
+              style: TextStyle(fontSize: 12),
+            ),
             onTap: () {
-              methods.navigateToPage(context, sisAddLessonsPage());
+              showInfoDialog(context);
             },
           ),
         ),
+        // const PopupMenuItem(
+        //     child: Divider(
+        //   height: 0.5,
+        // )),
         PopupMenuItem(
           child: ListTile(
-            title: const Text('Manuel Ekle (Hazırlık)'),
+            leading: const Icon(Icons.edit_note, color: Colors.green),
+            title: const Text(
+              'Manuel Ekle',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              "Hazırlıktakiler için tavsiye edilir.",
+              style: TextStyle(fontSize: 12),
+            ),
             onTap: () {
-              goToLessonAdd();
-            },
-          ),
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            title: const Text("Otomatik Al"),
-            onTap: () {
-              methods.navigateToPage(context, Sisloginpage());
+              methods.navigateToPage(context, LessonAdd());
             },
           ),
         ),
@@ -264,7 +304,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.book, color: Colors.white),
+                    const Icon(Icons.menu_book, color: Colors.white),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -398,4 +438,39 @@ class _TimetabledetailState extends State<Timetabledetail> {
 
     return hourA.compareTo(hourB);
   }
+}
+
+void showInfoDialog(BuildContext context) {
+  showDialog(
+    barrierDismissible: true,
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        backgroundColor: Colors.blueGrey[900],
+        title:
+            const Text("Bilgilendirme", style: TextStyle(color: Colors.amber)),
+        content: const Text(
+          "Sis e giriş yaptıktan sonra, 'Genel İşlemler' menüsünden 'Ders Programı' sekmesine gitmeniz gerekmektedir.\n\nDers Programı sekmesine gittiğinizde sağ üstteki kaydet butonuna basınız.",
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            child: const Text(
+              "Vazgeç",
+              style: TextStyle(color: Colors.red),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text(
+              "Sis'e Git",
+              style: TextStyle(color: Colors.green),
+            ),
+            onPressed: () =>
+                methods.navigateToPage(context, SisWebViewFullscreen()),
+          ),
+        ],
+      );
+    },
+  );
 }

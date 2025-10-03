@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:home_page/bottom.dart';
+import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:home_page/utilts/services/dbHelper.dart';
 import 'package:home_page/utilts/models/lesson.dart';
 
@@ -26,7 +28,7 @@ class _LessonDetailState extends State<LessonDetail> {
     // Mevcut ders bilgilerini forma doldur
     txtName.text = widget.lesson.name ?? '';
     txtClass.text = widget.lesson.place ?? '';
-    selectedDay = widget.lesson.day;
+    selectedDay = widget.lesson.day ?? "";
     selectedHour1 = widget.lesson.hour1;
     selectedHour2 = widget.lesson.hour2;
     txtTeacher.text = widget.lesson.teacher ?? "";
@@ -35,12 +37,16 @@ class _LessonDetailState extends State<LessonDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: bottomBar2(context, 0),
       appBar: AppBar(
+        leading: IconButton(
+            onPressed: () => methods.navigateToPage(context, Timetabledetail()),
+            icon: Icon(Icons.arrow_back)),
         title: const Text("Ders Detayı"),
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: deleteLesson,
+            onPressed: () => showWarningDialog(context),
             icon: const Icon(
               Icons.delete,
               color: Colors.red,
@@ -49,41 +55,49 @@ class _LessonDetailState extends State<LessonDetail> {
           )
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.all(20),
-        children: [
-          buildSectionTitle("Ders Bilgileri"),
-          const SizedBox(height: 15),
-          buildInfoCard("Ders Adı", buildNameField()),
-          const SizedBox(height: 10),
-          buildInfoCard("Sınıf", buildClassField()),
-          const SizedBox(height: 20),
-          buildSectionTitle("Öğretmen Bilgileri"),
-          const SizedBox(
-            height: 10,
-          ),
-          buildInfoCard("Öğretmen Adı", buildTeacherField()),
-          buildSectionTitle("Ders Günü"),
-          const SizedBox(height: 15),
-          buildInfoCard("Gün Seçimi", buildDayField()),
-          const SizedBox(height: 10),
-          buildSectionTitle("Ders Saatleri"),
-          const SizedBox(
-            height: 15,
-          ),
-          buildInfoCard("Birinci Ders Saati", buildHour1Field()),
-          buildInfoCard("İkinci Ders Saati", buildHour2Field()),
-          const SizedBox(
-            height: 30,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              buildSaveButton(),
-              buildDeleteButton(),
-            ],
-          )
-        ],
+      body: Container(
+        decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [
+          Color.fromARGB(255, 255, 255, 255),
+          Color.fromARGB(255, 39, 113, 148),
+          Color.fromARGB(255, 255, 255, 255),
+        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // buildSectionTitle("Ders Bilgileri"),
+            const SizedBox(height: 15),
+            buildInfoCard("Ders Adı", buildNameField()),
+            const SizedBox(height: 10),
+            buildInfoCard("Sınıf", buildClassField()),
+            const SizedBox(height: 20),
+            // buildSectionTitle("Öğretmen Bilgileri"),
+            const SizedBox(
+              height: 10,
+            ),
+            buildInfoCard("Öğretmen Adı", buildTeacherField()),
+            // buildSectionTitle("Ders Günü"),
+            const SizedBox(height: 15),
+            buildInfoCard("Gün Seçimi", buildDayField()),
+            const SizedBox(height: 10),
+            // buildSectionTitle("Ders Saatleri"),
+            const SizedBox(
+              height: 15,
+            ),
+            buildInfoCard("Birinci Ders Saati", buildHour1Field()),
+            buildInfoCard("İkinci Ders Saati", buildHour2Field()),
+            const SizedBox(
+              height: 30,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                buildSaveButton(),
+                buildDeleteButton(),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
@@ -110,9 +124,9 @@ class _LessonDetailState extends State<LessonDetail> {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             content,
           ],
         ),
@@ -160,7 +174,7 @@ class _LessonDetailState extends State<LessonDetail> {
     return DropdownButtonFormField<String>(
       // initialValue: selectedDay,
       decoration: InputDecoration(
-          hintText: "Gün Seç",
+          hintText: selectedDay ?? "Ders Gününü Seçiniz",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       items: days
           .map((day) => DropdownMenuItem(
@@ -196,7 +210,7 @@ class _LessonDetailState extends State<LessonDetail> {
     return DropdownButtonFormField<String>(
       // initialValue: selectedHour1,
       decoration: InputDecoration(
-          hintText: "İlk Ders Saati",
+          hintText: selectedHour1 ?? "İlk Ders Saatinizi Giriniz",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       items: hours
           .map((hour) => DropdownMenuItem(
@@ -232,7 +246,7 @@ class _LessonDetailState extends State<LessonDetail> {
       child: DropdownButtonFormField<String>(
           // initialValue: selectedHour2,
           decoration: InputDecoration(
-              hintText: "İkinci Ders Saatinizi Giriniz",
+              hintText: selectedHour2 ?? "İkinci Ders Saatinizi Giriniz",
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
           items: hours
@@ -251,11 +265,18 @@ class _LessonDetailState extends State<LessonDetail> {
 
   buildSaveButton() {
     return ElevatedButton.icon(
-      onPressed: updateLesson,
-      icon: Icon(Icons.save, size: 20),
-      label: Text("Dersi Güncelle"),
+      onPressed: () => showStateUpdateDialog(context),
+      icon: const Icon(
+        Icons.save,
+        size: 20,
+        color: Colors.white,
+      ),
+      label: const Text(
+        "Dersi Güncelle",
+        style: TextStyle(color: Colors.white),
+      ),
       style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
           backgroundColor: Colors.blue,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -264,10 +285,18 @@ class _LessonDetailState extends State<LessonDetail> {
 
   buildDeleteButton() {
     return ElevatedButton.icon(
-      onPressed: deleteLesson,
-      label: Text("Dersi Sil"),
+      onPressed: () => showWarningDialog(context),
+      icon: const Icon(
+        Icons.delete,
+        size: 20,
+        color: Colors.white,
+      ),
+      label: const Text(
+        "Dersi Sil",
+        style: TextStyle(color: Colors.white),
+      ),
       style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
           backgroundColor: Colors.red,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -275,16 +304,17 @@ class _LessonDetailState extends State<LessonDetail> {
   }
 
   void updateLesson() async {
+    List<Lesson>? updatedLessons;
     if (txtName.text.isEmpty ||
         txtClass.text.isEmpty ||
         selectedDay == null ||
         selectedHour1 == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
+        const SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
       );
       return;
     }
-
+    methods.printColored("${widget.lesson.id} - ${widget.lesson.name}", "32");
     await dbHelper.update(
       Lesson.withID(
         widget.lesson.id,
@@ -296,15 +326,100 @@ class _LessonDetailState extends State<LessonDetail> {
         txtTeacher.text,
       ),
     );
+    var data = await dbHelper.getLessons();
+    if (!mounted) return;
+    setState(() {
+      updatedLessons = data;
+    });
+    methods.navigateToPage(
+        context,
+        LessonDetail(
+            lesson: updatedLessons!
+                .firstWhere((lesson) => lesson.id == widget.lesson.id)));
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.blueGrey[900],
+            title: const Text(
+              "Bilgilendirme",
+              style: TextStyle(color: Colors.amber),
+            ),
+            content: const Text("Ders başarıyla güncellendi.",
+                style: TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                child: const Text(
+                  "Tamam",
+                  style: TextStyle(color: Colors.green),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
     Navigator.pop(context, true);
   }
 
   void deleteLesson() async {
     await dbHelper.delete(widget.lesson.id!);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Ders başarıyla silindi!")),
+      const SnackBar(content: Text("Ders başarıyla silindi!")),
     );
-    Navigator.pop(context, true);
+    methods.navigateToPage(context, Timetabledetail());
+  }
+
+  void showWarningDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
+          content: const Text("Bu dersi silmek istediğinize emin misiniz?",
+              style: TextStyle(color: Colors.white)),
+          actions: [
+            TextButton(
+              child:
+                  const Text("vazgeç", style: TextStyle(color: Colors.green)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+                onPressed: deleteLesson,
+                child: const Text("Sil", style: TextStyle(color: Colors.red)))
+          ],
+        );
+      },
+    );
+  }
+
+  showStateUpdateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
+          content: const Text("Dersi güncellemek istediğinize emin misiniz?",
+              style: TextStyle(color: Colors.white)),
+          actions: [
+            TextButton(
+              child: const Text("vazgeç", style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+                onPressed: updateLesson,
+                child: const Text("Güncelle",
+                    style: TextStyle(color: Colors.green)))
+          ],
+        );
+      },
+    );
   }
 }
-//

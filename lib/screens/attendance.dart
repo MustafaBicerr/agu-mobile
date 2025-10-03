@@ -84,6 +84,8 @@ class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
       bottomNavigationBar: bottomBar2(context, 4), // Alt gezinme çubuğu
 
       appBar: AppBar(
+        leadingWidth: 0,
+        leading: Container(),
         title: Text(
           "Günlük Devamsızlık Kontrolü",
           style: TextStyle(fontSize: screenWidth * 0.06),

@@ -27,10 +27,7 @@ Future<void> openLinkInApp(String url) async {
   await launchUrl(
     uri,
     mode: LaunchMode.inAppWebView,
-    webViewConfiguration: const WebViewConfiguration(
-      enableJavaScript: true,
-      enableDomStorage: true,
-    ),
+    webViewConfiguration: const WebViewConfiguration(),
   );
 }
 
@@ -214,7 +211,7 @@ class CityKayseriPage extends StatelessWidget {
       child: Column(
         children: [
           HeroHeader(
-            emoji: '📍',
+            emoji: '🏙️',
             title: 'Kayseri – Şehri Tanı',
             subtitle:
                 'Erciyes eteklerinde sanayi & öğrenci şehri. Talas–Merkez hattı, uygun yaşam ve zengin mutfak.',
@@ -300,15 +297,17 @@ class UniversityOverviewPage extends StatelessWidget {
               QuickActionChip(
                   icon: Icons.map_outlined,
                   label: 'Kampüs Haritası',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp(
+                      'https://www.arkitera.com/gorus/fabrikadan-universite-kampusune-agu-sumer-kampusu/')),
               QuickActionChip(
                   icon: Icons.local_library_outlined,
                   label: 'Kütüphane',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp(
+                      'https://katalog.agu.edu.tr/yordam/?p=0&dil=0')),
               QuickActionChip(
                   icon: Icons.business_center_outlined,
                   label: 'Öğrenci İşleri',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp('https://oidb-tr.agu.edu.tr/')),
             ],
           ),
           SectionCard(
@@ -495,18 +494,6 @@ class TransportPage extends StatelessWidget {
                   'Tramvay saatlerini uygulama veya web sitesinden takip et.'),
             ],
           ),
-          const SectionCard(
-            icon: Icons.nightlight_round,
-            title: 'Gece Dönüş Güvenliği',
-            children: [
-              Bullet(
-                  'Mümkünse arkadaşlarınla birlikte dön, tenha sokaklardan kaçın.'),
-              Bullet('Duraklara yakın ve aydınlık güzergâhları seç.'),
-              Bullet(
-                  'Telefon şarjını ve ulaşım kartı bakiyeni önceden kontrol et.'),
-              Bullet('Acil durumda 155/112 numaralarını aramaktan çekinme.'),
-            ],
-          ),
         ],
       ),
     );
@@ -628,7 +615,8 @@ class AcademicSurvivalPage extends StatelessWidget {
               QuickActionChip(
                   icon: Icons.local_library_outlined,
                   label: 'Kütüphane',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp(
+                      'https://katalog.agu.edu.tr/yordam/?p=0&dil=0')),
             ],
           ),
           const SectionCard(
@@ -675,15 +663,13 @@ class SocialLifePage extends StatelessWidget {
               QuickActionChip(
                   icon: Icons.groups_2_outlined,
                   label: 'Kulüpler',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
-              QuickActionChip(
-                  icon: Icons.event_outlined,
-                  label: 'Etkinlikler',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () =>
+                      openLinkInApp('https://od-tr.agu.edu.tr/kulupler')),
               QuickActionChip(
                   icon: Icons.sports_soccer_outlined,
                   label: 'Spor',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp(
+                      'https://booked.agu.edu.tr/Web/view-calendar.php')),
             ],
           ),
           const SectionCard(
@@ -740,11 +726,12 @@ class HousingPage extends StatelessWidget {
               QuickActionChip(
                   icon: Icons.home_work_outlined,
                   label: 'Yurt Başvurusu',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
-              QuickActionChip(
-                  icon: Icons.key_outlined,
-                  label: 'Ev Kiralama',
-                  onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                  onTap: () => openLinkInApp(
+                      'https://www.turkiye.gov.tr/gsb-yurt-basvurusu')),
+              // QuickActionChip(
+              //     icon: Icons.key_outlined,
+              //     label: 'Ev Kiralama',
+              //     onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
             ],
           ),
           const SectionCard(

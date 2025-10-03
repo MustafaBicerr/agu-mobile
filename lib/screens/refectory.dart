@@ -166,6 +166,8 @@ class _RefectoryScreenState extends State<RefectoryScreen> {
     return Scaffold(
       bottomNavigationBar: bottomBar2(context, 3),
       appBar: AppBar(
+        leadingWidth: 0,
+        leading: Container(),
         title: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,

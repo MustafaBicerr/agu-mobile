@@ -18,6 +18,7 @@ import 'package:home_page/screens/refectory.dart';
 import 'package:home_page/utilts/constants/constants.dart';
 import 'package:home_page/utilts/models/Store.dart';
 import 'package:home_page/utilts/services/apiService.dart';
+import 'package:home_page/utilts/services/database_matching_service.dart';
 import 'package:home_page/utilts/services/dbHelper.dart';
 import 'package:home_page/utilts/models/lesson.dart';
 import 'package:home_page/lessonDetail.dart';
@@ -26,16 +27,21 @@ import 'package:home_page/methods.dart';
 import 'package:home_page/notifications.dart';
 import 'package:home_page/upcomingLesson.dart';
 import 'package:home_page/utilts/services/events_service';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:sqflite/sqflite.dart';
 import 'firebase_options.dart';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'dart:io';
+
+List lessonsCodeListFromFirebase = ["ECE581(01)"]; // Ders kodlarını tutan liste
+List<Map<String, dynamic>> lessonsListFromFirebase = [];
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -58,8 +64,6 @@ void main() async {
   }
 
   tz.initializeTimeZones();
-
-  List<Map<String, dynamic>> _lessonsFromFirebase = [];
 
   final NotificationService notificationService =
       NotificationService(); // Global olarak tanımla
@@ -147,11 +151,98 @@ class _MyAppState extends State<MyApp> {
   bool isLoading = true;
   bool isDataFetched = false;
 
+  DateTime now = DateTime.now();
+  String year = DateTime.now().year.toString();
+  String month = DateTime.now().month.toString();
+
   final eventsService = EventsService(baseUrlEvents);
 
   // late List<sisLessons> _sisLessonsList = [];
 
   Map<String, dynamic>? userData;
+
+  // Haftalık dersleri Firestore'dan çekme
+  Future<void> _fetchClasses() async {
+    String? username;
+    String email = FirebaseAuth.instance.currentUser?.email ?? "";
+    String term = "";
+    switch (DateTime.now().month) {
+      case (9 || 10 || 11 || 12 || 1):
+        term = "GÜZ";
+      case (2 || 3 || 4 || 5):
+        term = "BAHAR";
+      case (6 || 7 || 8):
+        term = "YAZ";
+    }
+
+    if (email.isNotEmpty) {
+      var userDoc = await FirebaseFirestore.instance
+          .collection("users")
+          .where("email", isEqualTo: email)
+          .get();
+
+      if (userDoc.docs.isNotEmpty) {
+        setState(() {
+          username = userDoc.docs.first.id;
+        });
+      }
+    }
+    if (username == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(username)
+        .collection("classes")
+        .doc(year)
+        .get();
+
+    final data = snapshot.data() as Map<String, dynamic>?;
+    // lessonsListFromFirebase.add(data!);
+    // printColored("Firebase dersleri: $lessonsListFromFirebase", "32");
+
+// term altındaki map (ör: "YAZ")
+    final Map<String, dynamic> termMap =
+        (data?[term] as Map<String, dynamic>?) ?? {};
+
+// Her ders kodu için dön (ör: "ARCG303(01)")
+    for (final MapEntry<String, dynamic> e in termMap.entries) {
+      final String code = e.key; // "ARCG303(01)"
+      lessonsCodeListFromFirebase.add(code);
+
+      final Map<String, dynamic> lesson = (e.value as Map<String, dynamic>);
+
+      // Alan adlarını Firestore’daki ile EŞLEŞTİR
+      final int absenceFromUser = (lesson['absence_from_user'] ?? 0) as int;
+      final int totalAbsence = (lesson['total_absence'] ?? 0) as int;
+
+      // attendance_list: Map<String, bool>
+      final Map<String, bool> attendanceList =
+          ((lesson['attendance_list'] as Map<String, dynamic>?) ?? {})
+              .map((k, v) => MapEntry(k, v as bool));
+
+      printColored(
+        'code: $code  total_absence: $totalAbsence  absence_from_user: $absenceFromUser  attendance_count: ${attendanceList.length}',
+        '32',
+      );
+    }
+
+    // for (var entry in schedule) {
+    //   String day = entry["day"];
+    //   tempGroupedClasses.putIfAbsent(day, () => []).add({
+    //     "name": data["name"],
+    //     "location": data["location"],
+    //     "start": entry["start"],
+    //     "end": entry["end"],
+    //     "total_absence": data["total_absence"] ?? 0, // Devamsızlık bilgisi
+    //     "id": doc.id, // Dersin ID'si
+    //   });
+    // }
+
+    setState(() {
+      // groupedClasses = tempGroupedClasses; // Haftalık dersleri alıyoruz
+      // isLoading = false; // Veriler yüklendiğinde loading'i kapatıyoruz
+    });
+  }
 
   Future<void> _loadProfileImage() async {
     try {
@@ -203,6 +294,79 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // 1) Firebase’den gelen ders kodlari
+  final List<String> firebaseCodes = ["ECE581(01)"];
+
+  Future<void> runSyncWithDebug(List<String> firebaseCodes) async {
+    Sqflite.devSetDebugModeOn(true);
+
+    await SisLessonSyncService.instance.buildGlobalMapFromSisByCodes(
+      firebaseCodes,
+      verbose: true,
+    );
+
+    // ❌ eski: final friendDb = await openDatabase(friendPath);
+    // ✅ yeni:
+    final friendDb = await openFriendDbViaHelper();
+
+    await SisLessonSyncService.instance.insertFromFirebase(
+      sisLessonsByCode,
+      friendDb,
+      verbose: true,
+    );
+
+    await friendDb.close();
+  }
+
+  // Future<void> runSyncWithDebug(List<String> firebaseCodes) async {
+  //   // Turn on sqflite internal SQL logs
+  //   Sqflite.devSetDebugModeOn(true);
+
+  //   // 1) Global map’i doldur (SIS)
+  //   await SisLessonSyncService.instance.buildGlobalMapFromSisByCodes(
+  //     firebaseCodes,
+  //     // or colHourText: 'hour_text' if you have one column with ranges
+  //     verbose: true, // <--- DEBUG ON
+  //   );
+
+  //   // 2) Arkadas DB’yi ac
+  //   final dbPath = await getDatabasesPath();
+  //   final friendPath = p.join(dbPath, 'lessons.db');
+  //   print('[FRIEND] open path: $friendPath');
+  //   final friendDb = await openDatabase(friendPath);
+
+  //   // 3) Insert
+  //   await SisLessonSyncService.instance.insertFromFirebase(
+  //     sisLessonsByCode,
+  //     friendDb,
+  //     verbose: true, // <--- DEBUG ON
+  //   );
+
+  //   await friendDb.close();
+  //   print('[FRIEND] closed DB');
+  // }
+
+  // Future<void> runSync() async {
+  //   // Global map’i doldur (SIS -> global)
+  //   await SisLessonSyncService.instance.buildGlobalMapFromSisByCodes(
+  //     firebaseCodes,
+  //     // eger SIS tek kolon halinde "10.00-10.45;11.00-11.45" tutuyorsa:
+  //     // colHourText: 'hour_text',
+  //     // ve/veya tablo/kolon adlari farkliyse parametrelerle duzelt.
+  //   );
+
+  //   // Arkadasinin local DB’sini ac
+  //   final dbPath = await getDatabasesPath();
+  //   final friendPath = p.join(dbPath, 'lessons.db'); // mevcut yolunuz neyse
+  //   final friendDb = await openDatabase(friendPath);
+
+  //   // Global map’ten arkadas tablosuna yaz (pairing: hour1/hour2)
+  //   await SisLessonSyncService.instance
+  //       .insertFromFirebase(sisLessonsByCode, friendDb);
+
+  //   await friendDb.close();
+  // }
+
   void getAllDatas() {
     if (isDataFetched != true) {
       lessons = []; // Başlangıçta boş liste
@@ -210,6 +374,8 @@ class _MyAppState extends State<MyApp> {
       getDailyLesson();
       _loadProfileImage();
       loadUserData();
+      _fetchClasses();
+      runSyncWithDebug(firebaseCodes);
       isDataFetched = true;
     }
   }
@@ -223,12 +389,12 @@ class _MyAppState extends State<MyApp> {
 
     super.initState();
     lessons = []; // Başlangıçta boş liste
-    getLessons(); // Dersleri yükle
-    getDailyLesson();
+    // getLessons(); // Dersleri yükle
+    // getDailyLesson();
     Future.delayed(Duration.zero, () async {
       await requestNotificationPermission(context);
     });
-    getUserData();
+    // getUserData();
     getAllDatas();
 
     // _loadProfileImage();
@@ -567,6 +733,17 @@ Future<Map<String, dynamic>?> getUserData() async {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   final String? email = auth.currentUser?.email;
+
+  String term;
+  final m = DateTime.now().month;
+  if (m == 9 || m == 10 || m == 11 || m == 12 || m == 1) {
+    term = "GÜZ";
+  } else if (m == 2 || m == 3 || m == 4 || m == 5) {
+    term = "BAHAR";
+  } else {
+    term = "YAZ";
+  }
+
   if (email == null) {
     return null; // Kullanıcı giriş yapmamış
   }

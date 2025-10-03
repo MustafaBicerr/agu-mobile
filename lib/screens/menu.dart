@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:home_page/Feedbacks.dart';
+import 'package:home_page/screens/add_class_screen.dart';
 import 'package:home_page/screens/guide_page.dart';
 import 'package:home_page/screens/sisAddLessonsPage.dart';
 import 'package:home_page/screens/sisWeeklyProgram.dart';
