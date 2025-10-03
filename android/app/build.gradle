@@ -32,8 +32,8 @@ android {
         // minSdkVersion flutter.minSdkVersion
         minSdk 23
         targetSdk = 35 // Flutter'ın otomatik ayarını geçersiz kılar ve SDK 35'i kullanır.
-        versionCode 8     //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
-        versionName "1.0.7" //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
+        versionCode 9     //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
+        versionName "1.0.8" //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
 
         ndk { abiFilters 'armeabi-v7a','arm64-v8a','x86_64' }
     }
