@@ -55,7 +55,7 @@ class Dbhelper {
 
   void createDb(Database db, int version) async {
     await db.execute(
-        "Create table lessons(id integer primary key, name text, place text, day text, hour1 text, hour2 text, teacher text, attendance INTEGER DEFAULT 0, isProcessed INTEGER DEFAULT 0)");
+        "Create table lessons(id integer primary key, name text, place text, day text, hour1 text, hour2 text, hour3 text, teacher text, attendance INTEGER DEFAULT 0, isProcessed INTEGER DEFAULT 0)");
   }
 
   Future<List<Lesson>> getLessons() async {
@@ -85,6 +85,17 @@ class Dbhelper {
     return result;
   }
 
+  Future<int> updateAttendance(Lesson lesson) async {
+    Database db = await this.db;
+    var result = await db.update(
+      "lessons",
+      {'attendance': lesson.attendance},
+      where: "name = ?",
+      whereArgs: [lesson.name],
+    );
+    return result;
+  }
+
   void deleteDatabaseFile() async {
     String dbPath = join(await getDatabasesPath(), "timeTable.db");
     Database db = await openDatabase(dbPath);
@@ -108,6 +119,7 @@ class DedupHelpers {
     required String day,
     String? hour1,
     String? hour2,
+    String? hour3,
     required String place,
     required String teacher,
   }) {
@@ -200,6 +212,7 @@ extension DbhelperDedup on Dbhelper {
         day: l.day ?? '',
         hour1: l.hour1,
         hour2: l.hour2,
+        hour3: l.hour3,
         place: l.place ?? '',
         teacher: l.teacher ?? '',
       );
@@ -217,6 +230,7 @@ extension DbhelperDedup on Dbhelper {
           WHERE name = ? AND day = ?
             AND IFNULL(hour1,'') = ?
             AND IFNULL(hour2,'') = ?
+            AND IFNULL(hour3,'') = ?
             AND place = ? AND teacher = ?
           LIMIT 1
           ''',
@@ -225,6 +239,7 @@ extension DbhelperDedup on Dbhelper {
             (l.day ?? '').trim(),
             (l.hour1 ?? '').trim(),
             (l.hour2 ?? '').trim(),
+            (l.hour3 ?? '').trim(),
             (l.place ?? '').trim(),
             (l.teacher ?? '').trim(),
           ],
@@ -236,6 +251,7 @@ extension DbhelperDedup on Dbhelper {
             'day': l.day,
             'hour1': l.hour1,
             'hour2': l.hour2,
+            'hour3': l.hour3,
             'teacher': l.teacher,
             'attendance': l.attendance ?? 0,
             'isProcessed': l.isProcessed ?? 0,

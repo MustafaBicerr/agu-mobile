@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:home_page/utilts/services/dbHelper.dart';
 import 'package:home_page/utilts/models/lesson.dart';
 
@@ -10,6 +11,7 @@ class LessonAdd extends StatefulWidget {
 class _LessonAdd extends State<LessonAdd> {
   String? selectedHour1;
   String? selectedHour2;
+  String? selectedHour3;
   String? selectedDay;
   var dbHelper = Dbhelper();
 
@@ -141,6 +143,7 @@ class _LessonAdd extends State<LessonAdd> {
                         buildDayField(),
                         buildHour1Field(),
                         buildHour2Field(),
+                        buildHour3Field()
                       ],
                     ),
                   ),
@@ -314,6 +317,18 @@ class _LessonAdd extends State<LessonAdd> {
     );
   }
 
+  Widget buildHour3Field() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: buildHourField("Üçüncü Ders Saatinizi Giriniz", selectedHour3,
+          (value) {
+        setState(() {
+          selectedHour3 = value;
+        });
+      }),
+    );
+  }
+
   Widget buildSaveButton() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -353,9 +368,10 @@ class _LessonAdd extends State<LessonAdd> {
 
     await dbHelper.insert(
       Lesson(txtName.text, txtClass.text, selectedDay, selectedHour1,
-          selectedHour2, txtTeacher.text),
+          selectedHour2, selectedHour3, txtTeacher.text),
     );
-    Navigator.pop(
-        context, true); // Ders başarıyla eklendiğinde önceki sayfaya dön
+    // Navigator.pop(
+    //     context, true); // Ders başarıyla eklendiğinde önceki sayfaya dön
+    methods.navigateToPage(context, Timetabledetail());
   }
 }

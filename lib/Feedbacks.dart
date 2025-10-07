@@ -167,6 +167,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         backgroundColor: Colors.white,
       ),
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
             gradient: LinearGradient(colors: [
           Color.fromARGB(255, 255, 255, 255),
@@ -178,95 +179,94 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Deneyiminizi puanlayın:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: RatingBar.builder(
-                  initialRating: _rating,
-                  minRating: 0,
-                  direction: Axis.horizontal,
-                  allowHalfRating: true,
-                  itemCount: 5,
-                  itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  itemSize: 40,
-                  itemBuilder: (context, _) =>
-                      const Icon(Icons.star, color: Colors.amber),
-                  onRatingUpdate: (rating) {
-                    setState(() {
-                      _rating = rating;
-                    });
-                  },
+              const SizedBox(height: 15),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white70,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                controller: _feedbackController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: "Geri bildiriminizi buraya yazın...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Dosya seçme butonu ve seçilen dosyanın gösterimi
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _pickFile,
-                    icon: const Icon(
-                      Icons.attach_file,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      "Dosya Ekle",
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 7, 43, 127),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _fileName ?? "Dosya seçilmedi",
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              // Gönder butonu veya yükleme göstergesi
-              Center(
-                child: _isSubmitting
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: _submitFeedback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromARGB(255, 7, 43, 127),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 12,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _feedbackController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          hintText: "Geri bildiriminizi buraya yazın...",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          "Gönder",
-                          style: TextStyle(color: Colors.white),
-                        ),
                       ),
+                      const SizedBox(height: 15),
+
+                      // Dosya seçme butonu ve seçilen dosyanın gösterimi
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _pickFile,
+                            icon: const Icon(
+                              Icons.attach_file,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Dosya Ekle",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color.fromARGB(255, 7, 43, 127),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _fileName ?? "Dosya seçilmedi",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+
+                      // Gönder butonu veya yükleme göstergesi
+                      Center(
+                        child: _isSubmitting
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _submitFeedback,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 7, 43, 127),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Gönder",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

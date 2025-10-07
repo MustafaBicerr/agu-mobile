@@ -38,61 +38,6 @@ class _EventsCardState extends State<EventsCard> {
     // _loadEvents();
   }
 
-  // Future<void> _loadEvents() async {
-  //   try {
-  //     final events = await eventsService.getEvents(); // forceRefresh: false
-  //     setState(() => _eventList = events);
-  //   } catch (e) {
-  //     // Hata durumunda UI/Toast vs.
-  //     debugPrint('Events load error: $e');
-  //   }
-  // }
-
-  // Veriyi yükleyen fonksiyonlar
-  // Future<void> _loadDataForEvents() async {
-  //   try {
-  //     // Etkinlik verisini al
-  //     List<Events> events = await eventsApi.fetchEventsData();
-  //     // List<Speaker> speakers = await eventsApi.fetchSpeakersData();
-  //     setState(() {
-  //       _eventList = events;
-  //       // _speakerList = speakers;
-  //     });
-
-  //     printColored("events list: $_eventList", '32');
-  //     // printColored("speaker list: $_speakerList", '32');
-  //   } catch (e) {
-  //     // Hata durumunda gerekli işlemleri yapabilirsiniz
-  //     print("Error loading data: $e");
-  //   }
-  // }
-
-  // Future<void> _loadDataForSpeakers() async {
-  //   try {
-  //     List<Speaker> speakers = await eventsApi.fetchSpeakersData();
-  //     setState(() {
-  //       _speakerList = speakers;
-  //     });
-  //     printColored("speakers list: $_speakerList", "32");
-  //   } catch (e) {
-  //     // Hata durumunda gerekli işlemleri yapabilirsiniz
-  //     print("Error loading data: $e");
-  //   }
-  // }
-
-  // Future<void> _loadDataForTrip() async {
-  //   try {
-  //     List<Trip> trips = await eventsApi.fetchTripData();
-  //     setState(() {
-  //       _tripList = trips;
-  //     });
-  //     printColored("Trips list: $_tripList", "32");
-  //   } catch (e) {
-  //     // Hata durumunda gerekli işlemleri yapabilirsiniz
-  //     print("Error loading data: $e");
-  //   }
-  // }
-
   // Otomatik sayfa kaydırma işlemi
   void _startAutoSlide() {
     _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
@@ -123,7 +68,7 @@ class _EventsCardState extends State<EventsCard> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
-      height: screenHeight * 0.25,
+      height: screenHeight * 0.12,
       width: screenWidth * 0.95,
       // padding: EdgeInsets.all(2.0),
       child: Scaffold(

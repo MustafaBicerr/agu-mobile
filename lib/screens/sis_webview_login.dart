@@ -266,9 +266,11 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
       final seen = <String>{};
       final items = parsed.where((it) {
         final key =
-            '${it['day']}|${it['lesson']}|${it['teacher']}|${it['hour1']}|${it['hour2']}|${it['place']}';
+            '${it['day']}|${it['lesson']}|${it['teacher']}|${it['hour1']}|${it['hour2']}|${it['hour3']}|${it['place']}';
         if (seen.contains(key)) return false;
+
         seen.add(key);
+
         return true;
       }).toList();
 
@@ -284,14 +286,8 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
       for (final it in items) {
         try {
           for (final it in items) {
-            lessons.add(Lesson(
-              it['lesson'],
-              it['place'],
-              it['day'],
-              it['hour1'],
-              it['hour2'],
-              it['teacher'],
-            ));
+            lessons.add(Lesson(it['lesson'], it['place'], it['day'],
+                it['hour1'], it['hour2'], it['hour3'], it['teacher']));
           }
           ;
 
@@ -323,63 +319,6 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
       _scrapeInProgress = false;
     }
   }
-
-  // Future<void> _tryScrapeAndSave() async {
-  //   debugPrint('[SIS] Ders programi sayfasi acildi ✅ (pipeline basliyor)');
-
-  //   // 1) install hooks and try to point iframe to timetable
-  //   await _installIframeHooks();
-  //   await _forceIframeToTimetable();
-
-  //   // 2) wait for iframe HTML to be ready (handles 1-2s delayed load)
-  //   final iframeHtml =
-  //       await _waitIframeReadyHtml(timeoutMs: 15000, pollMs: 300);
-
-  //   // Fallback: show outer if iframe not ready
-  //   if (iframeHtml == null || iframeHtml.isEmpty) {
-  //     final rawOuter = await _wv
-  //         .runJavaScriptReturningResult("document.documentElement.outerHTML");
-  //     final outerHtml = _normalizeJsString(rawOuter);
-  //     debugPrint('[SIS] fallback OUTER len: ${outerHtml.length}');
-  //     final sample = outerHtml.substring(0, outerHtml.length.clamp(0, 800));
-  //     debugPrint('[SIS] OUTER PREVIEW:\n$sample');
-  //     return;
-  //   }
-
-  //   // 3) parse timetable and save to DB
-  //   debugPrint('[SIS] Dersler cekiliyor (iframe/event) ...');
-  //   final items = _parseTimetableAndGroup(iframeHtml);
-  //   debugPrint('[SIS] Pars edilen grup sayisi: ${items.length}');
-  //   if (items.isEmpty) {
-  //     final sample = iframeHtml.substring(0, iframeHtml.length.clamp(0, 800));
-  //     debugPrint('[SIS] IFRAME PREVIEW (first 800):\n$sample');
-  //   }
-
-  //   int inserted = 0;
-  //   for (final it in items) {
-  //     try {
-  //       await _db.insert(Lesson(
-  //         it['lesson'],
-  //         it['place'],
-  //         it['day'],
-  //         it['hour1'],
-  //         it['hour2'],
-  //         it['teacher'],
-  //       ));
-  //       inserted++;
-  //     } catch (e) {
-  //       debugPrint('[SIS][DB] insert error: $e');
-  //     }
-  //   }
-  //   debugPrint('[SIS] DB inserted lessons: $inserted');
-  //   debugPrint('[SIS] Dersler cekildi ✅');
-
-  //   if (mounted && inserted > 0) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Dersler kaydedildi ($inserted)')),
-  //     );
-  //   }
-  // }
 
   // ======================== parsing helpers ========================
 
@@ -486,12 +425,14 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
     final out = <Map<String, String?>>[];
     for (final g in grouped.values) {
       final hours = (g['hours'] as List<String>)..sort();
+
       out.add({
         'lesson': g['lesson'] as String,
         'place': g['place'] as String,
         'day': g['day'] as String,
         'hour1': hours.isNotEmpty ? hours[0] : null,
         'hour2': hours.length > 1 ? hours[1] : null,
+        'hour3': hours.length > 2 ? hours[2] : null,
         'teacher': g['teacher'] as String,
       });
     }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:home_page/LessonAdd.dart';
 import 'package:home_page/bottom.dart';
-import 'package:home_page/screens/sisAddLessonsPage.dart';
 
 import 'package:home_page/screens/sis_webview_login.dart';
 
@@ -208,10 +207,6 @@ class _TimetabledetailState extends State<Timetabledetail> {
             },
           ),
         ),
-        // const PopupMenuItem(
-        //     child: Divider(
-        //   height: 0.5,
-        // )),
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.edit_note, color: Colors.green),
@@ -267,7 +262,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
             ),
             const Divider(),
             SizedBox(
-              height: 220,
+              height: 231,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: dailyLessons.length,
@@ -319,7 +314,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Row(
                   children: [
                     const Icon(Icons.person, color: Colors.white),
@@ -335,7 +330,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Row(
                   children: [
                     const Icon(Icons.location_on, color: Colors.white),
@@ -349,7 +344,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -374,12 +369,20 @@ class _TimetabledetailState extends State<Timetabledetail> {
                                 color: Colors.black,
                               ),
                             ),
+                          if (lesson.hour3 != null && lesson.hour3!.isNotEmpty)
+                            Text(
+                              lesson.hour3!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     const Icon(Icons.remove, color: Colors.white),
@@ -390,7 +393,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                         fontSize: 14,
                         color: Colors.black,
                       ),
-                    )
+                    ),
                   ],
                 )
               ],

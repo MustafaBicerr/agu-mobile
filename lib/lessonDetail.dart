@@ -18,9 +18,11 @@ class _LessonDetailState extends State<LessonDetail> {
   TextEditingController txtName = TextEditingController();
   TextEditingController txtClass = TextEditingController();
   TextEditingController txtTeacher = TextEditingController();
+  int? attendance;
   String? selectedDay;
   String? selectedHour1;
   String? selectedHour2;
+  String? selectedHour3;
 
   @override
   void initState() {
@@ -31,7 +33,9 @@ class _LessonDetailState extends State<LessonDetail> {
     selectedDay = widget.lesson.day ?? "";
     selectedHour1 = widget.lesson.hour1;
     selectedHour2 = widget.lesson.hour2;
+    selectedHour3 = widget.lesson.hour3;
     txtTeacher.text = widget.lesson.teacher ?? "";
+    attendance = widget.lesson.attendance;
   }
 
   @override
@@ -86,16 +90,28 @@ class _LessonDetailState extends State<LessonDetail> {
             ),
             buildInfoCard("Birinci Ders Saati", buildHour1Field()),
             buildInfoCard("İkinci Ders Saati", buildHour2Field()),
+            buildInfoCard("Üçüncü Ders Saati", buildHour3Field()),
+
             const SizedBox(
               height: 30,
             ),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 buildSaveButton(),
                 buildDeleteButton(),
               ],
-            )
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+
+            buildInfoCard("Devamsızlık", buildAttendanceField()),
+            const SizedBox(
+              height: 15,
+            ),
+            buildSaveAttendanceButton(),
           ],
         ),
       ),
@@ -263,6 +279,89 @@ class _LessonDetailState extends State<LessonDetail> {
     );
   }
 
+  buildHour3Field() {
+    final List<String> hours = [
+      "08:00-08:45",
+      "09:00-09:45",
+      "10:00-10:45",
+      "11:00-11:45",
+      "12:00-12:45",
+      "13:00-13:45",
+      "14:00-14:45",
+      "15:00-15:45",
+      "16:00-16:45",
+      "17:00-17:45",
+      "18:00-18:45",
+      "19:00-19:45",
+    ];
+
+    return SingleChildScrollView(
+      child: DropdownButtonFormField<String>(
+          // initialValue: selectedHour2,
+          decoration: InputDecoration(
+              hintText: selectedHour3 ?? "Üçüncü Ders Saatinizi Giriniz",
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+          items: hours
+              .map((hour) => DropdownMenuItem(
+                    value: hour,
+                    child: Text(hour),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedHour3 = value;
+            });
+          }),
+    );
+  }
+
+  buildAttendanceField() {
+    final List<int> numbers = [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ];
+
+    return SingleChildScrollView(
+      child: DropdownButtonFormField<String>(
+          // initialValue: selectedHour2,
+          decoration: InputDecoration(
+              hintText: attendance.toString(),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+          items: numbers
+              .map((number) => DropdownMenuItem(
+                    value: number.toString(),
+                    child: Text("$number"),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              attendance = int.tryParse(value!);
+            });
+          }),
+    );
+  }
+
   buildSaveButton() {
     return ElevatedButton.icon(
       onPressed: () => showStateUpdateDialog(context),
@@ -273,6 +372,26 @@ class _LessonDetailState extends State<LessonDetail> {
       ),
       label: const Text(
         "Dersi Güncelle",
+        style: TextStyle(color: Colors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          backgroundColor: Colors.blue,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+    );
+  }
+
+  buildSaveAttendanceButton() {
+    return ElevatedButton.icon(
+      onPressed: () => showStateAttendanceUpdateDialog(context),
+      icon: const Icon(
+        Icons.save,
+        size: 20,
+        color: Colors.white,
+      ),
+      label: const Text(
+        "Devamsızlığı Güncelle",
         style: TextStyle(color: Colors.white),
       ),
       style: ElevatedButton.styleFrom(
@@ -303,6 +422,67 @@ class _LessonDetailState extends State<LessonDetail> {
     );
   }
 
+  void updateLessonAttendance() async {
+    List<Lesson>? updatedLessons;
+    if (txtName.text.isEmpty ||
+        txtClass.text.isEmpty ||
+        selectedDay == null ||
+        selectedHour1 == null ||
+        attendance == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
+      );
+      return;
+    }
+    methods.printColored("${widget.lesson.id} - ${widget.lesson.name}", "32");
+    await dbHelper.updateAttendance(
+      Lesson.withAttendance(
+          txtName.text,
+          txtClass.text,
+          selectedDay,
+          selectedHour1,
+          selectedHour2,
+          selectedHour3,
+          txtTeacher.text,
+          attendance),
+    );
+    var data = await dbHelper.getLessons();
+    if (!mounted) return;
+    setState(() {
+      updatedLessons = data;
+    });
+    methods.navigateToPage(
+        context,
+        LessonDetail(
+            lesson: updatedLessons!
+                .firstWhere((lesson) => lesson.id == widget.lesson.id)));
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.blueGrey[900],
+            title: const Text(
+              "Bilgilendirme",
+              style: TextStyle(color: Colors.amber),
+            ),
+            content: const Text("Ders başarıyla güncellendi.",
+                style: TextStyle(color: Colors.white)),
+            actions: [
+              TextButton(
+                child: const Text(
+                  "Tamam",
+                  style: TextStyle(color: Colors.green),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
+    Navigator.pop(context, true);
+  }
+
   void updateLesson() async {
     List<Lesson>? updatedLessons;
     if (txtName.text.isEmpty ||
@@ -323,6 +503,7 @@ class _LessonDetailState extends State<LessonDetail> {
         selectedDay,
         selectedHour1,
         selectedHour2,
+        selectedHour3,
         txtTeacher.text,
       ),
     );
@@ -415,6 +596,33 @@ class _LessonDetailState extends State<LessonDetail> {
             ),
             TextButton(
                 onPressed: updateLesson,
+                child: const Text("Güncelle",
+                    style: TextStyle(color: Colors.green)))
+          ],
+        );
+      },
+    );
+  }
+
+  showStateAttendanceUpdateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
+          content: const Text(
+              "Devamsızlığı güncellemek istediğinize emin misiniz?",
+              style: TextStyle(color: Colors.white)),
+          actions: [
+            TextButton(
+              child: const Text("vazgeç", style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+                onPressed: updateLessonAttendance,
                 child: const Text("Güncelle",
                     style: TextStyle(color: Colors.green)))
           ],

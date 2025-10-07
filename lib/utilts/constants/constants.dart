@@ -15,10 +15,10 @@ const String baseUrlRefectory =
 // "https://script.google.com/macros/s/AKfycbxO5kYXlc1GBlyHv6sYfZB42wAGjZZwlcS2nkAZWbHHhCJLp_nfrrZWyJ2LOZ2ckR7U/exec";
 
 const String apiAcademic =
-    "AKfycbweKfflevdTocYBpFz9A82nRLUKj4_54qi6SeglUXIFoNDG1-Z21Ob9n8La1Nbe0f5UsA";
+    "AKfycbwC4E0xDzain5eut77UL6gwFIdBW9fWHXu7ASFYnCylOu52E4EGrgk1WYt0Dz860YRA";
 
 const String baseUrlAcademic =
-    "https://script.google.com/macros/s/AKfycbweKfflevdTocYBpFz9A82nRLUKj4_54qi6SeglUXIFoNDG1-Z21Ob9n8La1Nbe0f5UsA/exec";
+    "https://script.google.com/macros/s/AKfycbwC4E0xDzain5eut77UL6gwFIdBW9fWHXu7ASFYnCylOu52E4EGrgk1WYt0Dz860YRA/exec";
 
 const String apiEvents =
     "AKfycbzYKFOXFEse3yKHunZeoJgcLnZ4nSiP1yrMQBkVXbPNNF5Tus4hEV0NpsadhBtiV4cm";

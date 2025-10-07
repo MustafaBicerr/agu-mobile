@@ -71,7 +71,7 @@ class NotificationService {
   Future<void> scheduleWeeklyNotification(int id, String title, String body,
       int day, String time, int minuteBefore) async {
     // Saat aralığını ayrıştır
-    final startTime = time.split(" - ")[0]; // Başlangıç saati: "20.20"
+    final startTime = time.split("-")[0]; // Başlangıç saati: "20.20"
     late int newDay;
 
     if (day > 7) {
@@ -90,7 +90,7 @@ class NotificationService {
     }
 
     // Başlangıç saatini saat ve dakika olarak ayır
-    final hourAndMinute = startTime.split(".");
+    final hourAndMinute = startTime.split(":");
     if (hourAndMinute.length != 2) {
       throw FormatException("Invalid time format: $time");
     }

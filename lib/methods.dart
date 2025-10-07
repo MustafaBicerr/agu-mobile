@@ -216,17 +216,38 @@ class ShowUpcomingLesson extends StatelessWidget {
                     ),
                     if (lesson != null) const Spacer(),
                     if (lesson != null)
-                      CircleAvatar(
-                        radius: screenWidth * 0.04,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          lesson!.hour1?.substring(0, 5) ?? "",
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.027,
-                            fontWeight: FontWeight.bold,
+                      Container(
+                        decoration: BoxDecoration(
+                          // color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(1.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                lesson != null ? (lesson?.day ?? "") : "",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: screenWidth * 0.04,
+                                    ),
+                              ),
+                              // SizedBox(width: screenWidth * 0.015),
+                              // Text(
+                              //   lesson!.hour1?.substring(0, 5) ?? "",
+                              //   style: TextStyle(
+                              //       fontSize: screenWidth * 0.027,
+                              //       fontWeight: FontWeight.bold,
+                              //       color: Colors.white),
+                              // )
+                            ],
                           ),
                         ),
-                      )
+                      ),
                   ],
                 ),
               ),
@@ -262,27 +283,54 @@ class ShowUpcomingLesson extends StatelessWidget {
 
   Widget _buildLessonContentHorizontal(
       BuildContext context, double screenWidth) {
-    return Table(
-      columnWidths: const {
-        0: FlexColumnWidth(1),
-        1: FlexColumnWidth(1),
-        2: FlexColumnWidth(1),
-        3: FlexColumnWidth(1),
-      },
+    return Stack(
+      alignment: Alignment(1, -1.13),
       children: [
-        TableRow(children: [
-          _buildLessonDetail(
-              "Ders", lesson!.name, "Dersin ismi bulunamadı", screenWidth,
-              maxLines: 2),
-          _buildLessonDetail("Öğretmen", lesson!.teacher,
-              "Dersin öğretmeni bulunamadı", screenWidth,
-              maxLines: 2),
-          _buildLessonDetail(
-              "Sınıf", lesson!.place, "Dersin sınıfı bulunamadı", screenWidth,
-              maxLines: 1),
-          _buildLessonDetail("Gün", lesson!.day, "Gün bilgisi yok", screenWidth,
-              maxLines: 1),
-        ])
+        Table(
+          columnWidths: const {
+            0: FlexColumnWidth(1),
+            1: FlexColumnWidth(1),
+            2: FlexColumnWidth(1),
+            3: FlexColumnWidth(1),
+          },
+          children: [
+            TableRow(children: [
+              _buildLessonDetail(
+                  "Ders", lesson!.name, "Dersin ismi bulunamadı", screenWidth,
+                  maxLines: 2),
+              _buildLessonDetail("Öğretmen", lesson!.teacher,
+                  "Dersin öğretmeni bulunamadı", screenWidth,
+                  maxLines: 2),
+              _buildLessonDetail("Sınıf", lesson!.place,
+                  "Dersin sınıfı bulunamadı", screenWidth,
+                  maxLines: 1),
+              // _buildLessonDetail("Gün", lesson!.day, "Gün bilgisi yok", screenWidth,
+              //     maxLines: 1),
+            ]),
+          ],
+        ),
+        Container(
+          width: 50,
+          // color: Colors.amber,
+          alignment: Alignment.topRight,
+          child: Column(
+            children: [
+              Text("Saat:",
+                  style: TextStyle(
+                      fontSize: screenWidth * 0.035,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo)),
+              SizedBox(height: screenWidth * 0.0005),
+              Text(
+                lesson!.hour1?.substring(0, 5) ?? "",
+                style: TextStyle(
+                    fontSize: screenWidth * 0.028,
+                    // fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -309,7 +357,7 @@ class ShowUpcomingLesson extends StatelessWidget {
             overflow: TextOverflow.ellipsis, // taşmayı engeller
             style: TextStyle(
               fontSize: screenWidth * 0.028,
-              fontWeight: FontWeight.normal,
+              // fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),

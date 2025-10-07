@@ -50,6 +50,8 @@ dependencies:
   dio_cookie_manager: ^3.3.0
   html: ^0.15.6
   crypto: ^3.0.6
+  lottie: ^3.3.1
+  video_player: ^2.10.0
 
 
 
@@ -67,6 +69,11 @@ flutter:
 
   # Varlık dosyalarını tanımlamak için bu kısmı kullanabilirsiniz.
   assets:
+    - assets/animations/starting_animation.mp4
+    - assets/animations/starting_animation.json
+    - assets/animations/starting_animation2.json
+    - assets/animations/starting_animation.gif
+    - assets/animations/starting_animation.svg
     - assets/db/lessons.db
     - assets/images/agu-logo.png
     - assets/images/Canvas_logo_single_mark.png

@@ -5,6 +5,7 @@ import 'package:home_page/screens/add_class_screen.dart';
 import 'package:home_page/screens/guide_page.dart';
 import 'package:home_page/screens/sisAddLessonsPage.dart';
 import 'package:home_page/screens/sisWeeklyProgram.dart';
+import 'package:home_page/screens/starting_animation.dart';
 import 'package:home_page/utilts/models/academic.dart';
 import 'package:home_page/utilts/services/apiService.dart';
 import 'package:home_page/utilts/services/dbHelper.dart';
@@ -140,13 +141,13 @@ class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
           } else if (snapshot.hasData) {
             final List<Academic> allData = snapshot.data!;
             final List<Map<String, String>> periods = allData
-                .where((data) => data.category == "Dönem")
+                .where((data) => data.category == "Dönem") // sadece "Dönem"
                 .map((e) => {
                       "event": e.event!,
                       "startDate": e.startDate!,
                       "endDate": e.endDate!,
+                      "term": e.term!, // term ekle
                     })
-                .toSet()
                 .toList();
 
             return ListView.builder(
@@ -195,13 +196,21 @@ class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
   }
 
   Widget _buildSubCategoryList(Map period, List<Academic> allData) {
+    final periodStart = DateTime.parse(period["startDate"]!);
+    final periodEnd = DateTime.parse(period["endDate"]!);
+    final term = period["term"];
+
     final List<String> subCategories = allData
+        .where((item) =>
+            item.startDate != null &&
+            item.endDate != null &&
+            item.term == term && // sadece aynı term
+            !(item.category == "Dönem")) // Dönem kategorisini exclude et
         .where((item) {
-          final itemEndDate = item.endDate;
-          return DateTime.parse(period["endDate"]!)
-                  .isAfter(DateTime.parse(itemEndDate!)) &&
-              DateTime.parse(period["startDate"]!)
-                  .isBefore(DateTime.parse(item.startDate!));
+          final itemStart = DateTime.parse(item.startDate!);
+          final itemEnd = DateTime.parse(item.endDate!);
+          return itemStart.isBefore(periodEnd.add(const Duration(days: 1))) &&
+              itemEnd.isAfter(periodStart.subtract(const Duration(days: 1)));
         })
         .map((e) => e.category!)
         .toSet()
@@ -248,8 +257,12 @@ class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
 
   Widget _buildDetailsList(
       String category, Map period, List<Academic> allData) {
+    final term = period["term"];
     final List<Academic> filteredData = allData.where((item) {
-      return item.category == category && period["event"] == item.term;
+      return item.category == category &&
+          item.term == term && // sadece aynı term
+          item.startDate != null &&
+          item.endDate != null;
     }).toList();
 
     if (filteredData.isEmpty) {
@@ -266,35 +279,38 @@ class _AcademicCalendarScreenState extends State<AcademicCalendarScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: filteredData.length,
-      itemBuilder: (context, index) {
-        final detail = filteredData[index];
-        String formattedStartDate = DateFormat('dd/MM/yyyy')
-            .format(DateTime.parse(detail.startDate!).toLocal());
-        String formattedEndDate = DateFormat('dd/MM/yyyy')
-            .format(DateTime.parse(detail.endDate!).toLocal());
+    return SizedBox(
+      height: 400, // modalde overflow olmasın diye
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: filteredData.length,
+        itemBuilder: (context, index) {
+          final detail = filteredData[index];
+          String formattedStartDate = DateFormat('dd/MM/yyyy')
+              .format(DateTime.parse(detail.startDate!).toLocal());
+          String formattedEndDate = DateFormat('dd/MM/yyyy')
+              .format(DateTime.parse(detail.endDate!).toLocal());
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          color: Colors.blue[50],
-          child: ListTile(
-            leading: const Icon(
-              Icons.event,
-              color: Colors.blueAccent,
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            title: Text(
-              detail.event!,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            color: Colors.blue[50],
+            child: ListTile(
+              leading: const Icon(
+                Icons.event,
+                color: Colors.blueAccent,
+              ),
+              title: Text(
+                detail.event!,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text("📅 $formattedStartDate - $formattedEndDate"),
             ),
-            subtitle: Text("📅 $formattedStartDate - $formattedEndDate"),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -359,12 +375,39 @@ class _PasswordScreenState extends State<PasswordScreen> {
     await prefs.setString("sisPassword", sisPassword.text);
 
     // Kullanıcıya bilgilendirme mesajı göster
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Bilgiler başarıyla kaydedildi!"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Colors.blueGrey[900],
+            title: const Text(
+              "Başarılı",
+              style: TextStyle(color: Colors.amber),
+            ),
+            content: const Text(
+              "Bilgiler başarıyla kaydedildi!",
+              style: TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Dialog'u kapat
+                  // Navigator.of(context).popUntil((route) => route.isFirst),
+                },
+                child: const Text(
+                  "Tamam",
+                  style: TextStyle(color: Colors.green),
+                ),
+              ),
+            ],
+          );
+        });
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(
+    //     content: Text("Bilgiler başarıyla kaydedildi!"),
+    //     backgroundColor: Colors.green,
+    //   ),
+    // );
   }
 
   Future<void> _saveDialogPreference(bool value) async {
@@ -434,84 +477,193 @@ class _PasswordScreenState extends State<PasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Giriş Bilgileri"),
+        backgroundColor: Colors.white,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Text(
-                "Canvas Bilgileri",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
+      body: Container(
+        decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [
+          Color.fromARGB(255, 255, 255, 255),
+          Color.fromARGB(255, 39, 113, 148),
+          Color.fromARGB(255, 255, 255, 255),
+        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: const Border(
+                      bottom: BorderSide(color: Colors.black, width: 4),
+                      right: BorderSide(color: Colors.black, width: 3),
+                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Canvas Bilgileri",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        methods.buildTextField(
+                            "Canvas Mail", const Icon(Icons.email), canvasMail),
+                        const SizedBox(height: 10),
+                        methods.buildPasswordField("Canvas Şifre",
+                            const Icon(Icons.lock), canvasPassword),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              methods.buildTextField(
-                  "Canvas Mail", const Icon(Icons.email), canvasMail),
-              const SizedBox(height: 10),
-              methods.buildPasswordField(
-                  "Canvas Şifre", const Icon(Icons.lock), canvasPassword),
-              const SizedBox(height: 20),
-              const Text(
-                "Hazırlık Canvas Bilgileri",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    border: const Border(
+                      bottom: BorderSide(color: Colors.black, width: 4),
+                      right: BorderSide(color: Colors.black, width: 3),
+                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Hazırlık Canvas Bilgileri",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        methods.buildTextField("Canvas Mail",
+                            const Icon(Icons.email), prepCanvasMail),
+                        const SizedBox(height: 10),
+                        methods.buildPasswordField("Canvas Şifre",
+                            const Icon(Icons.lock), prepCanvasPassword),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              methods.buildTextField(
-                  "Canvas Mail", const Icon(Icons.email), prepCanvasMail),
-              const SizedBox(height: 10),
-              methods.buildPasswordField(
-                  "Canvas Şifre", const Icon(Icons.lock), prepCanvasPassword),
-              const SizedBox(height: 20),
-              const Text(
-                "Zimbra Bilgileri",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    border: const Border(
+                      bottom: BorderSide(color: Colors.black, width: 4),
+                      right: BorderSide(color: Colors.black, width: 3),
+                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Zimbra Bilgileri",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        methods.buildTextField(
+                            "Zimbra Mail", const Icon(Icons.email), zimbraMail),
+                        const SizedBox(height: 10),
+                        methods.buildPasswordField("Zimbra Şifre",
+                            const Icon(Icons.lock), zimbraPassword),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              methods.buildTextField(
-                  "Zimbra Mail", const Icon(Icons.email), zimbraMail),
-              const SizedBox(height: 10),
-              methods.buildPasswordField(
-                  "Zimbra Şifre", const Icon(Icons.lock), zimbraPassword),
-              const SizedBox(height: 20),
-              const Text(
-                "SIS Bilgileri",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    border: const Border(
+                      bottom: BorderSide(color: Colors.black, width: 4),
+                      right: BorderSide(color: Colors.black, width: 3),
+                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "SIS Bilgileri",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        methods.buildTextField("Öğrenci ID numarası",
+                            const Icon(Icons.email), sisMail),
+                        const SizedBox(height: 10),
+                        methods.buildPasswordField(
+                            "SIS Şifre", const Icon(Icons.lock), sisPassword),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              methods.buildTextField(
-                  "Öğrenci ID numarası", const Icon(Icons.email), sisMail),
-              const SizedBox(height: 10),
-              methods.buildPasswordField(
-                  "SIS Şifre", const Icon(Icons.lock), sisPassword),
-              const SizedBox(
-                height: 30,
-              ),
-              ElevatedButton.icon(
-                onPressed: () => saveCredentials(context),
-                icon: const Icon(Icons.save),
-                label: const Text("Kaydet"),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white),
-              ),
-            ],
+                const SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => saveCredentials(context),
+                  icon: const Icon(Icons.save),
+                  label: const Text("Kaydet"),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -669,234 +821,295 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text("Bildirim Ayarları"),
         centerTitle: true,
       ),
-      body: ListView(
-        padding:
-            const EdgeInsets.all(10.0), // Listeye kenarlardan boşluk ekledim
-        children: [
-          const Text(
-            "Genel Bildirimler",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.indigo,
-            ),
-          ),
-          const SizedBox(height: 10), // Bildirim başlığından sonra boşluk
-          Card(
-            elevation: 2, // Hafif gölge efekti
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: const Icon(
-                Icons.notifications,
-                size: 30,
-                color: Colors.indigo,
-              ),
-              title: const Text(
-                "Bildirimler",
-                style: TextStyle(fontSize: 18),
-              ),
-              subtitle: Text(
-                isNotificationsEnabled
-                    ? "Bildirimler açık. Alt bildirimleri düzenleyebilirsiniz."
-                    : "Bildirimler kapalı.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isNotificationsEnabled ? Colors.green : Colors.red,
+      body: Container(
+        decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [
+          Color.fromARGB(255, 255, 255, 255),
+          Color.fromARGB(255, 39, 113, 148),
+          Color.fromARGB(255, 255, 255, 255),
+        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+        child: ListView(
+          padding:
+              const EdgeInsets.all(10.0), // Listeye kenarlardan boşluk ekledim
+          children: [
+            // const Text(
+            //   "Genel Bildirimler",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.indigo,
+            //   ),
+            // ),
+            const SizedBox(height: 10), // Bildirim başlığından sonra boşluk
+            Card(
+              elevation: 2, // Hafif gölge efekti
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.notifications,
+                  size: 30,
+                  color: Colors.indigo,
                 ),
-              ),
-              trailing: Switch(
-                value: isNotificationsEnabled,
-                onChanged: toggleNotification,
-                activeColor: Colors.green,
-              ),
-            ),
-          ),
-          const Divider(),
-
-          // Yemekhane Bildirimi
-          const Text(
-            "Yemekhane Bildirimleri",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.indigo,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: const Icon(
-                Icons.restaurant,
-                size: 30,
-                color: Colors.indigo,
-              ),
-              title: const Text(
-                "Yemekhane Bildirimi",
-                style: TextStyle(fontSize: 18),
-              ),
-              subtitle: Text(
-                isRefectoryNotification
-                    ? "Yemekhane bildirimleri açık."
-                    : "Yemekhane bildirimleri kapalı.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isRefectoryNotification ? Colors.green : Colors.red,
+                title: const Text(
+                  "Bildirimler",
+                  style: TextStyle(fontSize: 18),
                 ),
-              ),
-              trailing: Switch(
-                value: isRefectoryNotification,
-                onChanged: isNotificationsEnabled
-                    ? (value) => toggleRefectoryNotification(value)
-                    : null,
-                activeColor: Colors.green,
-              ),
-            ),
-          ),
-          const Divider(),
-
-          const Text(
-            "Devamsızlık Bildirimleri",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.indigo,
-            ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: const Icon(
-                Icons.person_remove,
-                size: 30,
-                color: Colors.indigo,
-              ),
-              title: const Text(
-                "Devamsızlık Bildirimleri",
-                style: TextStyle(fontSize: 18),
-              ),
-              subtitle: Text(
-                isAttendanceNotification
-                    ? "Devamsızlık bildirimleri açık"
-                    : "Devamsızlık bildirimleri kapalı",
-                style: TextStyle(
+                subtitle: Text(
+                  isNotificationsEnabled
+                      ? "Bildirimler açık. Alt bildirimleri düzenleyebilirsiniz."
+                      : "Bildirimler kapalı.",
+                  style: TextStyle(
                     fontSize: 14,
-                    color:
-                        isAttendanceNotification ? Colors.green : Colors.red),
-              ),
-              trailing: Switch(
-                value: isAttendanceNotification,
-                onChanged: isNotificationsEnabled
-                    ? (value) => toggleAttendanceNotification(value)
-                    : null,
-                activeColor: Colors.green,
-              ),
-            ),
-          ),
-          const Divider(),
-          // Ders Bildirimi
-          const Text(
-            "Ders Bildirimleri",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.indigo,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: const Icon(
-                Icons.school,
-                size: 30,
-                color: Colors.indigo,
-              ),
-              title: const Text(
-                "Ders Bildirimleri",
-                style: TextStyle(fontSize: 18),
-              ),
-              subtitle: Text(
-                isLessonNotification
-                    ? "Ders bildirimleri açık. Bildirim ayarlarını düzenleyebilirsiniz."
-                    : "Ders bildirimleri kapalı.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isLessonNotification ? Colors.green : Colors.red,
+                    color: isNotificationsEnabled ? Colors.green : Colors.red,
+                  ),
+                ),
+                trailing: Switch(
+                  value: isNotificationsEnabled,
+                  onChanged: toggleNotification,
+                  activeColor: Colors.green,
                 ),
               ),
-              trailing: Switch(
-                value: isLessonNotification,
-                onChanged: isNotificationsEnabled
-                    ? (value) => toggleLessonNotification(value)
-                    : null,
-                activeColor: Colors.green,
-              ),
             ),
-          ),
-          const Divider(),
+            const Divider(),
 
-          // Ders Bildirimleri İçin Kaydetme Alanı
-          if (isLessonNotification) ...[
-            const Text(
-              "Ders Bildirim Ayarları",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
+            // Yemekhane Bildirimi
+            // const Text(
+            //   "Yemekhane Bildirimleri",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.indigo,
+            //   ),
+            // ),
+            const SizedBox(height: 10),
+            Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.restaurant,
+                  size: 30,
+                  color: Colors.indigo,
+                ),
+                title: const Text(
+                  "Yemekhane Bildirimi",
+                  style: TextStyle(fontSize: 18),
+                ),
+                subtitle: Text(
+                  isRefectoryNotification
+                      ? "Yemekhane bildirimleri açık."
+                      : "Yemekhane bildirimleri kapalı.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isRefectoryNotification ? Colors.green : Colors.red,
+                  ),
+                ),
+                trailing: Switch(
+                  value: isRefectoryNotification,
+                  onChanged: isNotificationsEnabled
+                      ? (value) => toggleRefectoryNotification(value)
+                      : null,
+                  activeColor: Colors.green,
+                ),
               ),
             ),
+            const Divider(),
+
+            // const Text(
+            //   "Devamsızlık Bildirimleri",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.indigo,
+            //   ),
+            // ),
+            const SizedBox(
+              height: 10,
+            ),
+            Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.person_remove,
+                  size: 30,
+                  color: Colors.indigo,
+                ),
+                title: const Text(
+                  "Devamsızlık Bildirimleri",
+                  style: TextStyle(fontSize: 18),
+                ),
+                subtitle: Text(
+                  isAttendanceNotification
+                      ? "Devamsızlık bildirimleri açık"
+                      : "Devamsızlık bildirimleri kapalı",
+                  style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          isAttendanceNotification ? Colors.green : Colors.red),
+                ),
+                trailing: Switch(
+                  value: isAttendanceNotification,
+                  onChanged: isNotificationsEnabled
+                      ? (value) => toggleAttendanceNotification(value)
+                      : null,
+                  activeColor: Colors.green,
+                ),
+              ),
+            ),
+            const Divider(),
+            // Ders Bildirimi
+            // const Text(
+            //   "Ders Bildirimleri",
+            //   style: TextStyle(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.indigo,
+            //   ),
+            // ),
             const SizedBox(height: 10),
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Bildirim Süresi (dk)",
-                hintText: "Örneğin: 10 dakika önce (Sadece sayı giriniz.)",
-                border: OutlineInputBorder(
+            Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.school,
+                  size: 30,
+                  color: Colors.indigo,
+                ),
+                title: const Text(
+                  "Ders Bildirimleri",
+                  style: TextStyle(fontSize: 18),
+                ),
+                subtitle: Text(
+                  isLessonNotification
+                      ? "Ders bildirimleri açık. Bildirim ayarlarını düzenleyebilirsiniz."
+                      : "Ders bildirimleri kapalı.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isLessonNotification ? Colors.green : Colors.red,
+                  ),
+                ),
+                trailing: Switch(
+                  value: isLessonNotification,
+                  onChanged: isNotificationsEnabled
+                      ? (value) => toggleLessonNotification(value)
+                      : null,
+                  activeColor: Colors.green,
+                ),
+              ),
+            ),
+            const Divider(),
+
+            // Ders Bildirimleri İçin Kaydetme Alanı
+            if (isLessonNotification) ...[
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.notifications_active_rounded,
+                                color: Colors.indigo,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                "Ders Bildirim Ayarları",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  // fontWeight: FontWeight.bold,
+                                  // color: Colors.black45,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 15),
+                          TextField(
+                            decoration: InputDecoration(
+                              labelText: "Bildirim Süresi (dk)",
+                              hintText:
+                                  "Örneğin: 10 dakika önce (Sadece sayı giriniz.)",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                            ),
+                            controller: txtMinute,
+                            onChanged: (value) {
+                              // Girilen değer değiştiğinde kullanıcıya bilgi verebiliriz
+                            },
+                          ),
+                          // const SizedBox(height: 10),
+                        ],
+                      ),
+                    ), /////////////////////
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(right: 16.0, bottom: 16.0),
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              String minute = txtMinute.text;
+                              final isNumeric =
+                                  RegExp(r'^\d+$').hasMatch(minute);
+
+                              if (minute.isNotEmpty && isNumeric) {
+                                await SaveMinute(minute); // Kaydet
+
+                                showNotificationDiolog(int.parse(minute));
+
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   SnackBar(
+                                //       content:
+                                //           Text("Değer kaydedildi: $minute dakika önce")),
+                                // );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          "Lütfen geçerli bir değer giriniz")),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text("Kaydet"),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              controller: txtMinute,
-              onChanged: (value) {
-                // Girilen değer değiştiğinde kullanıcıya bilgi verebiliriz
-              },
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                String minute = txtMinute.text;
-                final isNumeric = RegExp(r'^\d+$').hasMatch(minute);
-
-                if (minute.isNotEmpty && isNumeric) {
-                  await SaveMinute(minute); // Kaydet
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text("Değer kaydedildi: $minute dakika önce")),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("Lütfen geçerli bir değer giriniz")),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text("Kaydet"),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -905,6 +1118,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void dispose() {
     txtMinute.dispose(); // Bellek sızıntısını önlemek için controller'ı temizle
     super.dispose();
+  }
+
+  void showNotificationDiolog(int minute) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.blueGrey[900],
+          title: const Text(
+            "Bildirim İzni",
+            style: TextStyle(color: Colors.amber),
+          ),
+          content: Text(
+            "Her ders için ders başlamadan '$minute' dakika önce bildirim alacaksınız.",
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Tamam", style: TextStyle(color: Colors.green)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -918,7 +1158,7 @@ class GelistiricilerScreen extends StatelessWidget {
     {
       "name": "Mustafa Uğur Karaköse",
       "bio":
-          "Merhaba, ben AGÜ'de Bilgisayar Mühendisi 3. sınıf öğrencisiyim. Yapay zeka ve oyun geliştirme üzerine çalışıyorum. Unity ve TensorFlow kullanıyorum. Ek olarak kendimi siber güvenlik konularında geliştirmeye çalışıyorum.",
+          "Merhaba, ben bilgisayar mühendisliği 3. sınıf öğrencisiyim. Flutter ile mobil uygulama geliştirip, java spring boot ile servis geliştirmekteyim.",
       "image": "assets/images/gelistiriciler/karakose.jpg"
     },
     {
