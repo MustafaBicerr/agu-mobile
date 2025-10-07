@@ -303,7 +303,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        lesson.name ?? "Ders Adı Yok",
+                        lesson.name!.toUpperCase() ?? "Ders Adı Yok",
                         maxLines: 1,
                         style: const TextStyle(
                           fontSize: 18,

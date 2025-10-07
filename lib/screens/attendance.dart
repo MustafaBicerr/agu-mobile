@@ -52,6 +52,7 @@ class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
       // Saat sayısını belirle
       hourCount = 1;
       if (lesson.hour2 != null && lesson.hour2!.isNotEmpty) hourCount++;
+      if (lesson.hour3 != null && lesson.hour3!.isNotEmpty) hourCount++;
 
       await dbHelper.incrementAttendanceByCount(lesson.name!, hourCount);
 
@@ -70,8 +71,8 @@ class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
       SnackBar(
         content: Text(
           attended
-              ? "✅ ${lesson.name} dersine katıldınız."
-              : "❌ ${lesson.name} dersine katılmadınız. Devamsızlık +$hourCount",
+              ? "✅ ${lesson.name!.toUpperCase()} dersine katıldınız."
+              : "❌ ${lesson.name!.toUpperCase()} dersine katılmadınız. Devamsızlık +$hourCount",
         ),
       ),
     );
@@ -145,7 +146,7 @@ class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    lesson.name ?? "Ders Adı Yok",
+                    lesson.name!.toUpperCase(),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -168,7 +169,7 @@ class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Saatler: ${lesson.hour1 ?? ""} / ${lesson.hour2 ?? ""}",
+              "Saatler: ${lesson.hour1 ?? ""} / ${lesson.hour2 ?? ""} / ${lesson.hour3 ?? ""}",
               style: const TextStyle(
                 fontSize: 16,
                 color: Colors.black54,

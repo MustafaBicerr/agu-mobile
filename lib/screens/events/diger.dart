@@ -1011,6 +1011,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:home_page/bottom.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -1032,8 +1033,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
   List<String> get _images {
     final e = widget.event;
     return [
-      if ((e.uygulama_ici_resim ?? '').toString().isNotEmpty)
-        e.uygulama_ici_resim!,
       if ((e.etkinlik_afisi ?? '').toString().isNotEmpty) e.etkinlik_afisi!,
     ];
   }
@@ -1265,17 +1264,18 @@ class _EventDetailPageState extends State<EventDetailPage> {
                             border: pillBorder,
                             icon: Icons.event_outlined,
                             title: "Tarih",
-                            value: e.etkinlik_tarihi
-                                    ?.toString()
-                                    .substring(0, 10) ??
-                                "-",
+                            value: e.etkinlik_tarihi != null
+                                ? DateFormat('yyyy-MM-dd').format(
+                                    DateTime.parse(e.etkinlik_tarihi!)
+                                        .toLocal())
+                                : "-",
                           ),
                           if ((e.kulup_sayfasi ?? "").toString().isNotEmpty)
                             _LinkPillCard(
                               bg: pillBg,
                               border: pillBorder,
                               icon: Icons.link_outlined,
-                              title: "Kulüp sayfası",
+                              title: "Bağlantı",
                               onTap: () => _open(e.kulup_sayfasi!),
                             ),
                         ],
@@ -1327,18 +1327,18 @@ class _EventDetailPageState extends State<EventDetailPage> {
                     const SizedBox(height: 24),
 
                     // —— CTA (sayfanın en altında) ——
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () {/* join action */},
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        child: const Text("Hemen katıl"),
-                      ),
-                    ),
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   height: 52,
+                    //   child: ElevatedButton(
+                    //     onPressed: () {/* join action */},
+                    //     style: ElevatedButton.styleFrom(
+                    //       shape: RoundedRectangleBorder(
+                    //           borderRadius: BorderRadius.circular(16)),
+                    //     ),
+                    //     child: const Text("Hemen katıl"),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -1507,7 +1507,7 @@ class _LinkPillCard extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: const [
           Icon(Icons.link_outlined, size: 18, color: Colors.black87),
           SizedBox(width: 8),
-          Text("Kulüp sayfası",
+          Text("Bağlantı",
               style: TextStyle(
                   color: Colors.black87, fontWeight: FontWeight.w600)),
           SizedBox(width: 6),

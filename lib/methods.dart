@@ -295,8 +295,8 @@ class ShowUpcomingLesson extends StatelessWidget {
           },
           children: [
             TableRow(children: [
-              _buildLessonDetail(
-                  "Ders", lesson!.name, "Dersin ismi bulunamadı", screenWidth,
+              _buildLessonDetail("Ders", lesson!.name!.toUpperCase(),
+                  "Dersin ismi bulunamadı", screenWidth,
                   maxLines: 2),
               _buildLessonDetail("Öğretmen", lesson!.teacher,
                   "Dersin öğretmeni bulunamadı", screenWidth,
@@ -353,7 +353,7 @@ class ShowUpcomingLesson extends StatelessWidget {
           ),
           Text(
             value ?? fallback,
-            maxLines: maxLines,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis, // taşmayı engeller
             style: TextStyle(
               fontSize: screenWidth * 0.028,

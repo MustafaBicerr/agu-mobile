@@ -165,7 +165,7 @@ class NotificationService {
 
   Future<void> scheduleRefectory() async {
     await scheduleRefectoryNotification(1000, "Yemekhane Bildirimi",
-        "Yemek servisi başladı. Bugünün menüsünü görmek için tıkla.", 11, 0);
+        "Yemek servisi başladı. Bugünün menüsünü görmek için tıkla.", 11, 00);
   }
 
   Future<void> scheduleAttendanceNotification(

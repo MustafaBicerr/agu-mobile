@@ -198,7 +198,7 @@ class _Buttons extends State<Buttons> {
                     onTap: () {
                       handleButtonPress(
                         title: "Zimbra AGU",
-                        url: "https://posta.agu.edu.tr/#1",
+                        url: "https://posta.agu.edu.tr/?loginOp=logout",
                         mailPrefKey: "zimbraMail",
                         passwordPrefKey: "zimbraPassword",
                         mailFieldName: "username",

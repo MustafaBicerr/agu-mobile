@@ -126,35 +126,35 @@ class EventsApi {
   }
 }
 
-class sisLessonsAPI {
-  Future<Map<String, List<sisLessons>>> fetchAllLessonData() async {
-    final url = Uri.parse(baseUrlSisLessons);
+// class sisLessonsAPI {
+//   Future<Map<String, List<sisLessons>>> fetchAllLessonData() async {
+//     final url = Uri.parse(baseUrlSisLessons);
 
-    try {
-      final response = await http.get(url);
-      print("Veri uzunluğu: ${response.body.length}");
+//     try {
+//       final response = await http.get(url);
+//       print("Veri uzunluğu: ${response.body.length}");
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+//       if (response.statusCode == 200) {
+//         final Map<String, dynamic> data = json.decode(response.body);
 
-        final List<dynamic> compData = data['compData'] ?? [];
-        final List<dynamic> ieData = data['ieData'] ?? [];
+//         final List<dynamic> compData = data['compData'] ?? [];
+//         final List<dynamic> ieData = data['ieData'] ?? [];
 
-        final List<sisLessons> compLessons =
-            compData.map((e) => sisLessons.fromJson(e)).toList();
+//         final List<sisLessons> compLessons =
+//             compData.map((e) => sisLessons.fromJson(e)).toList();
 
-        final List<sisLessons> ieLessons =
-            ieData.map((e) => sisLessons.fromJson(e)).toList();
+//         final List<sisLessons> ieLessons =
+//             ieData.map((e) => sisLessons.fromJson(e)).toList();
 
-        return {
-          "compData": compLessons,
-          "ieData": ieLessons,
-        };
-      } else {
-        throw Exception("Veri alınamadı: ${response.statusCode}");
-      }
-    } catch (e) {
-      throw Exception("Hata: $e");
-    }
-  }
-}
+//         return {
+//           "compData": compLessons,
+//           "ieData": ieLessons,
+//         };
+//       } else {
+//         throw Exception("Veri alınamadı: ${response.statusCode}");
+//       }
+//     } catch (e) {
+//       throw Exception("Hata: $e");
+//     }
+//   }
+// }

@@ -36,7 +36,7 @@ class Dbhelper {
     Database db = await this.db;
     String lowerName = name.trim().toLowerCase(); // ← güncel hali
     await db.rawUpdate(
-      'UPDATE lessons SET attendance = attendance + 1 WHERE LOWER(TRIM(name)) = ?',
+      'UPDATE lessons SET attendance = attendance + ? WHERE LOWER(TRIM(name)) = ?',
       [lowerName],
     );
   }
@@ -128,6 +128,7 @@ class DedupHelpers {
       day.norm().toUpperCase(),
       (hour1 ?? '').norm().toUpperCase(),
       (hour2 ?? '').norm().toUpperCase(),
+      (hour3 ?? '').norm().toUpperCase(),
       place.norm().toUpperCase(),
       teacher.norm().toUpperCase(),
     ].join('|');
@@ -141,6 +142,7 @@ extension DbhelperDedup on Dbhelper {
     required String day,
     String? hour1,
     String? hour2,
+    String? hour3,
     required String place,
     required String teacher,
   }) async {
@@ -152,6 +154,7 @@ extension DbhelperDedup on Dbhelper {
       WHERE name = ? AND day = ?
         AND IFNULL(hour1,'') = ?
         AND IFNULL(hour2,'') = ?
+        AND IFNULL(hour3,'') = ?
         AND place = ? AND teacher = ?
       LIMIT 1
       ''',
@@ -160,6 +163,7 @@ extension DbhelperDedup on Dbhelper {
         day.trim(),
         (hour1 ?? '').trim(),
         (hour2 ?? '').trim(),
+        (hour3 ?? '').trim(),
         place.trim(),
         teacher.trim(),
       ],
@@ -175,32 +179,40 @@ extension DbhelperDedup on Dbhelper {
       day: l.day ?? '',
       hour1: l.hour1,
       hour2: l.hour2,
+      hour3: l.hour3,
       place: l.place ?? '',
       teacher: l.teacher ?? '',
     );
     if (exists) return false;
 
     final Database d = await db;
+    var dbHelper = Dbhelper();
     // Burada kendi insert(Lesson) metodunu da çağırabilirsin:
     // return await insert(l) > 0;
     // Eğer elle yazacaksan:
-    final data = {
-      'name': l.name,
-      'place': l.place,
-      'day': l.day,
-      'hour1': l.hour1,
-      'hour2': l.hour2,
-      'teacher': l.teacher,
-      'attendance': l.attendance ?? 0,
-      'isProcessed': l.isProcessed ?? 0,
-    };
-    await d.insert(
-        'lessons', data /*, conflictAlgorithm: ConflictAlgorithm.ignore*/);
+
+    // final data = {
+    //   'name': l.name,
+    //   'place': l.place,
+    //   'day': l.day,
+    //   'hour1': l.hour1,
+    //   'hour2': l.hour2,
+    //   'hour3' : l.hour3,
+    //   'teacher': l.teacher,
+    //   'attendance': l.attendance ?? 0,
+    //   'isProcessed': l.isProcessed ?? 0,
+    // };
+
+    final data =
+        Lesson(l.name, l.place, l.day, l.hour1, l.hour2, l.hour3, l.teacher);
+    await dbHelper
+        .insert(data /*, conflictAlgorithm: ConflictAlgorithm.ignore*/);
     return true;
   }
 
   /// Toplu ekleme: önce RAM'de aynı dersleri ayıklar, sonra DB'de var mı bakıp ekler.
   /// Dönen değer: gerçekten eklenen kayıt sayısı.
+
   Future<int> insertManyIfNotExistsPreserveAttendance(
       List<Lesson> lessons) async {
     // 1) RAM dedup
@@ -217,23 +229,13 @@ extension DbhelperDedup on Dbhelper {
         teacher: l.teacher ?? '',
       );
       if (seen.add(key)) unique.add(l);
-    }
-
-    // 2) DB dedup (transaction ile hizlandir)
+    } // 2) DB dedup (transaction ile hizlandir)
     final Database d = await db;
     int inserted = 0;
     await d.transaction((txn) async {
       for (final l in unique) {
         final rows = await txn.rawQuery(
-          '''
-          SELECT 1 FROM lessons 
-          WHERE name = ? AND day = ?
-            AND IFNULL(hour1,'') = ?
-            AND IFNULL(hour2,'') = ?
-            AND IFNULL(hour3,'') = ?
-            AND place = ? AND teacher = ?
-          LIMIT 1
-          ''',
+          ''' SELECT 1 FROM lessons WHERE name = ? AND day = ? AND IFNULL(hour1,'') = ? AND IFNULL(hour2,'') = ? AND IFNULL(hour3,'') = ? AND place = ? AND teacher = ? LIMIT 1 ''',
           [
             (l.name ?? '').trim(),
             (l.day ?? '').trim(),

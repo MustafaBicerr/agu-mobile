@@ -28,7 +28,7 @@ class _LessonDetailState extends State<LessonDetail> {
   void initState() {
     super.initState();
     // Mevcut ders bilgilerini forma doldur
-    txtName.text = widget.lesson.name ?? '';
+    txtName.text = widget.lesson.name!.toUpperCase();
     txtClass.text = widget.lesson.place ?? '';
     selectedDay = widget.lesson.day ?? "";
     selectedHour1 = widget.lesson.hour1;
@@ -152,11 +152,11 @@ class _LessonDetailState extends State<LessonDetail> {
 
   buildNameField() {
     return TextField(
-      decoration: InputDecoration(
-          hintText: "Ders Adını Giriniz",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      controller: txtName,
-    );
+        decoration: InputDecoration(
+            hintText: "Ders Adını Giriniz",
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+        controller: txtName);
   }
 
   buildClassField() {

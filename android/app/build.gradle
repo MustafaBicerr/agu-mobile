@@ -30,7 +30,7 @@ android {
     defaultConfig {
         applicationId "com.agu.agumobile"
         // minSdkVersion flutter.minSdkVersion
-        minSdk 23
+        minSdkVersion flutter.minSdkVersion
         targetSdk = 35 // Flutter'ın otomatik ayarını geçersiz kılar ve SDK 35'i kullanır.
         versionCode 10     //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.
         versionName "1.0.9" //her güncellemeden sonra bu değeri değiştir, yoksa appbundle ı sisteme sürüklerken hata alırsın.

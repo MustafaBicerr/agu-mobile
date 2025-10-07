@@ -30,6 +30,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="28">
         
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -286,8 +286,14 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
       for (final it in items) {
         try {
           for (final it in items) {
-            lessons.add(Lesson(it['lesson'], it['place'], it['day'],
-                it['hour1'], it['hour2'], it['hour3'], it['teacher']));
+            lessons.add(Lesson(
+                it['lesson']!.toLowerCase(),
+                it['place'],
+                it['day'],
+                it['hour1'],
+                it['hour2'],
+                it['hour3'],
+                it['teacher']));
           }
           ;
 
@@ -295,21 +301,14 @@ class _SisWebViewFullscreenState extends State<SisWebViewFullscreen> {
           final inserted =
               await _db.insertManyIfNotExistsPreserveAttendance(lessons);
           debugPrint('[SIS] DB inserted (dedup): $inserted');
-          // await _db.insert(Lesson(
-          //   it['lesson'],
-          //   it['place'],
-          //   it['day'],
-          //   it['hour1'],
-          //   it['hour2'],
-          //   it['teacher'],
-          // ));
-          // inserted++;
+          // await _db.insert(Lesson(it['lesson'], it['place'], it['day'],
+          //     it['hour1'], it['hour2'], it['hour3'], it['teacher']));
+          debugPrint('[SIS] DB inserted lessons: $lessons');
+          debugPrint('[SIS] Dersler cekildi ✅');
         } catch (e) {
           debugPrint('[SIS][DB] insert error: $e');
         }
       }
-      // debugPrint('[SIS] DB inserted lessons: $inserted');
-      debugPrint('[SIS] Dersler cekildi ✅');
 
       // Tek sefer çalıştık: tekrarını engelle
       _scrapeCompleted = true;

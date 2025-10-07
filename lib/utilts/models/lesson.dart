@@ -10,15 +10,9 @@ class Lesson {
   int? attendance; // Varsayılan devamsızlık
   int isProcessed = 0; // Varsayılan olarak işlenmemiş
 
-  Lesson(
-    this.name,
-    this.place,
-    this.day,
-    this.hour1,
-    this.hour2,
-    this.hour3,
-    this.teacher,
-  );
+  Lesson(this.name, this.place, this.day, this.hour1, this.hour2, this.hour3,
+      this.teacher,
+      {this.attendance = 0});
   Lesson.withID(this.id, this.name, this.place, this.day, this.hour1,
       this.hour2, this.hour3, this.teacher,
       {this.attendance, this.isProcessed = 0});

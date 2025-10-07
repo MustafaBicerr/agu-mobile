@@ -193,26 +193,26 @@ class _MyAppState extends State<MyApp> {
   // 1) Firebase’den gelen ders kodlari
   final List<String> firebaseCodes = ["ECE581(01)"];
 
-  Future<void> runSyncWithDebug(List<String> firebaseCodes) async {
-    Sqflite.devSetDebugModeOn(true);
+  // Future<void> runSyncWithDebug(List<String> firebaseCodes) async {
+  //   Sqflite.devSetDebugModeOn(true);
 
-    await SisLessonSyncService.instance.buildGlobalMapFromSisByCodes(
-      firebaseCodes,
-      verbose: true,
-    );
+  //   await SisLessonSyncService.instance.buildGlobalMapFromSisByCodes(
+  //     firebaseCodes,
+  //     verbose: true,
+  //   );
 
-    // ❌ eski: final friendDb = await openDatabase(friendPath);
-    // ✅ yeni:
-    final friendDb = await openFriendDbViaHelper();
+  //   // ❌ eski: final friendDb = await openDatabase(friendPath);
+  //   // ✅ yeni:
+  //   final friendDb = await openFriendDbViaHelper();
 
-    await SisLessonSyncService.instance.insertFromFirebase(
-      sisLessonsByCode,
-      friendDb,
-      verbose: true,
-    );
+  //   await SisLessonSyncService.instance.insertFromFirebase(
+  //     sisLessonsByCode,
+  //     friendDb,
+  //     verbose: true,
+  //   );
 
-    await friendDb.close();
-  }
+  //   await friendDb.close();
+  // }
 
   void getAllDatas() {
     if (isDataFetched != true) {
@@ -222,7 +222,7 @@ class _MyAppState extends State<MyApp> {
       _loadProfileImage();
       loadUserData();
       // _fetchClasses();
-      runSyncWithDebug(firebaseCodes);
+      // runSyncWithDebug(firebaseCodes);
       isDataFetched = true;
     }
   }
@@ -321,31 +321,36 @@ class _MyAppState extends State<MyApp> {
       drawer: Drawer(
         child: MenuPage(),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [
-          Color.fromARGB(255, 255, 255, 255),
-          Color.fromARGB(255, 39, 113, 148),
-          Color.fromARGB(255, 255, 255, 255),
-        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: screenHeight * 0.20, child: TimeTable_Card()),
-              // SizedBox(
-              //   height: screenHeight * 0.025,
-              // ),
-              RefectoryCard(),
-              SizedBox(
-                height: screenHeight * 0.025,
-              ),
-              EventsCard(),
-              SizedBox(
-                height: screenHeight * 0.025,
-              ),
-              Buttons()
-            ],
+      body: SingleChildScrollView(
+        child: Container(
+          decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [
+            Color.fromARGB(255, 255, 255, 255),
+            Color.fromARGB(255, 39, 113, 148),
+            Color.fromARGB(255, 255, 255, 255),
+          ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: screenHeight * 0.025,
+                ),
+                SizedBox(height: screenHeight * 0.20, child: TimeTable_Card()),
+                // SizedBox(
+                //   height: screenHeight * 0.025,
+                // ),
+                RefectoryCard(),
+                SizedBox(
+                  height: screenHeight * 0.025,
+                ),
+                EventsCard(),
+                SizedBox(
+                  height: screenHeight * 0.035,
+                ),
+                Buttons()
+              ],
+            ),
           ),
         ),
       ),

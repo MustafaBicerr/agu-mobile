@@ -20,7 +20,7 @@ dependencies:
   path: ^1.8.3
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.2
-  webview_flutter: ^4.10.0
+  webview_flutter: ^4.13.0
   flutter_secure_storage: ^9.2.2
   flutter_local_notifications: ^18.0.1
   flutter_timezone: ^4.0.0
@@ -52,6 +52,7 @@ dependencies:
   crypto: ^3.0.6
   lottie: ^3.3.1
   video_player: ^2.10.0
+  
 
 
 
@@ -97,6 +98,7 @@ flutter:
     - assets/images/calendars/tabela4.png
     - assets/images/calendars/tabela5.png
     - assets/images/calendars/tabela6.png
+    - assets/images/linkedin_logo.png
 
 
     
