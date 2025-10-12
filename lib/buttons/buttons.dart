@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:home_page/buttons/customButton.dart';
 import 'package:home_page/buttons/loginService.dart';
 import 'package:home_page/buttons/sis_agu.dart';
+import 'package:home_page/buttons/zimbra_agu.dart';
 import 'package:home_page/methods.dart';
 import 'package:home_page/screens/menu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -118,6 +119,7 @@ class _Buttons extends State<Buttons> {
 
     // Manuel giriş zorunlu hale getirilmediği sürece AlertDialog göster
     showAutoEntryDialog(
+      // 🔹 "Zimbra" ise özel sayfaya yönlendir
       () {
         methods.navigateToPage(context, WebPage(url: url, title: title));
       },
@@ -198,7 +200,7 @@ class _Buttons extends State<Buttons> {
                     onTap: () {
                       handleButtonPress(
                         title: "Zimbra AGU",
-                        url: "https://posta.agu.edu.tr/?loginOp=logout",
+                        url: "https://posta.agu.edu.tr",
                         mailPrefKey: "zimbraMail",
                         passwordPrefKey: "zimbraPassword",
                         mailFieldName: "username",
@@ -206,6 +208,8 @@ class _Buttons extends State<Buttons> {
                         loginButtonFieldXPath: "//*[@id='loginButton']",
                         keyword: "#1",
                       );
+
+                      // methods.navigateToPage(context, ZimbraPage());
                     },
                   ),
                   const SizedBox(

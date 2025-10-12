@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-//import 'package:home_page/bottom.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class LoginService extends StatefulWidget {
@@ -56,6 +55,13 @@ class _CanvasPageState extends State<LoginService> {
   }
 
   Future<void> _autoLogin() async {
+    if (widget.title.toLowerCase().contains("zimbra")) {
+      await _controller.runJavaScript('''
+              document.body.style.zoom = '0.50';
+              document.body.style.transformOrigin = '0 0';
+            ''');
+    }
+
     await _controller.runJavaScript('''
       let checkFormInterval = setInterval(function() {
         let usernameField = document.getElementsByName("${widget.mailFieldName}")[0];
@@ -86,37 +92,40 @@ class _CanvasPageState extends State<LoginService> {
     ''');
 
     // Giriş işleminin sonucunu kontrol et
-    Future.delayed(const Duration(seconds: 5), () async {
-      if (!mounted) return;
+    //   Future.delayed(const Duration(seconds: 5), () async {
+    //     if (!mounted) return;
 
-      final currentUrl = await _controller.currentUrl();
-      if (currentUrl != null && currentUrl.contains(widget.keyword)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Giriş başarılı!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        setState(() {
-          isLoading = false; // Giriş tamamlandı, WebView gösterilecek
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Giriş başarısız! Lütfen bilgileri kontrol edin."),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          isLoading = false; // Giriş başarısız olsa da WebView açılacak
-        });
-      }
-    });
+    //     final currentUrl = await _controller.currentUrl();
+    //     if (currentUrl != null && currentUrl.contains(widget.keyword)) {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(
+    //           content: Text("Giriş başarılı!"),
+    //           backgroundColor: Colors.green,
+    //         ),
+    //       );
+    //       setState(() {
+    //         isLoading = false; // Giriş tamamlandı, WebView gösterilecek
+    //       });
+    //     } else {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(
+    //           content: Text("Giriş başarısız! Lütfen bilgileri kontrol edin."),
+    //           backgroundColor: Colors.red,
+    //         ),
+    //       );
+    //       setState(() {
+    //         isLoading = false; // Giriş başarısız olsa da WebView açılacak
+    //       });
+    //     }
+    //   });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // appBar: AppBar(
+      //   title: Text(widget.title),
+      // ),
       body: isLoading
           ? const Center(
               child:
