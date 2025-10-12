@@ -6,6 +6,7 @@ import 'package:home_page/screens/guide_page.dart';
 import 'package:home_page/screens/sisAddLessonsPage.dart';
 import 'package:home_page/screens/sisWeeklyProgram.dart';
 import 'package:home_page/screens/starting_animation.dart';
+import 'package:home_page/screens/wifi_page.dart';
 import 'package:home_page/utilts/models/academic.dart';
 import 'package:home_page/utilts/services/apiService.dart';
 import 'package:home_page/utilts/services/dbHelper.dart';
@@ -66,6 +67,11 @@ class MenuPage extends StatelessWidget {
         icon: Icons.menu_book_outlined,
         iconColor: Colors.brown,
         page: const GuidePage()),
+    MenuItem(
+        title: "Wi-Fi Bilgileri",
+        icon: Icons.wifi,
+        iconColor: Colors.black,
+        page: const WifiPage()),
   ];
 
   MenuPage({super.key});
