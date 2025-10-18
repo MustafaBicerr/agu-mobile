@@ -5,10 +5,10 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:home_page/bottom.dart';
 
 import 'package:home_page/notifications.dart';
-import 'package:home_page/utilts/models/Store.dart';
+import 'package:home_page/models/Store.dart';
 
-import 'package:home_page/utilts/models/meal.dart';
-import 'package:home_page/utilts/services/apiService.dart';
+import 'package:home_page/models/meal.dart';
+import 'package:home_page/services/apiService.dart';
 
 class RefectoryScreen extends StatefulWidget {
   @override

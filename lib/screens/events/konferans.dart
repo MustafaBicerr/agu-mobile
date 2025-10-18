@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:home_page/bottom.dart';
-import 'package:home_page/utilts/models/events.dart';
+import 'package:home_page/models/events.dart';
 
 class ConferencePage extends StatelessWidget {
   final Speaker speaker;

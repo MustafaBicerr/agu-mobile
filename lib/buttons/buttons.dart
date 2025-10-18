@@ -4,7 +4,7 @@ import 'package:home_page/buttons/loginService.dart';
 import 'package:home_page/buttons/sis_agu.dart';
 import 'package:home_page/buttons/zimbra_agu.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/screens/menu.dart';
+import 'package:home_page/screens/menu_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Buttons extends StatefulWidget {

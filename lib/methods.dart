@@ -4,9 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:home_page/lessonDetail.dart';
 import 'package:home_page/notifications.dart';
 
-import 'package:home_page/utilts/services/dbHelper.dart';
+import 'package:home_page/services/dbHelper.dart';
 
-import 'utilts/models/lesson.dart';
+import 'models/lesson.dart';
 
 class Methods {
   final dbHelper = Dbhelper();

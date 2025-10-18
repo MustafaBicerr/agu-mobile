@@ -1,7 +1,7 @@
 import 'dart:core';
 
-import 'package:home_page/utilts/models/lesson.dart';
-import 'package:home_page/utilts/services/database_matching_service.dart';
+import 'package:home_page/models/lesson.dart';
+import 'package:home_page/services/database_matching_service.dart';
 import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';

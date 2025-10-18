@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/screens/TimeTableDetail.dart';
-import 'package:home_page/utilts/services/dbHelper.dart';
-import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/services/dbHelper.dart';
+import 'package:home_page/models/lesson.dart';
 
-class LessonAdd extends StatefulWidget {
+class LessonAddPage extends StatefulWidget {
   @override
-  State<LessonAdd> createState() => _LessonAdd();
+  State<LessonAddPage> createState() => _LessonAdd();
 }
 
-class _LessonAdd extends State<LessonAdd> {
+class _LessonAdd extends State<LessonAddPage> {
   String? selectedHour1;
   String? selectedHour2;
   String? selectedHour3;

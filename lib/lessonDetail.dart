@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/bottom.dart';
 import 'package:home_page/screens/TimeTableDetail.dart';
-import 'package:home_page/utilts/services/dbHelper.dart';
-import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/services/dbHelper.dart';
+import 'package:home_page/models/lesson.dart';
 
 class LessonDetail extends StatefulWidget {
   final Lesson lesson; // Seçilen ders

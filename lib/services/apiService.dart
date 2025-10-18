@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:home_page/notifications.dart';
 import 'package:home_page/utilts/constants/constants.dart';
-import 'package:home_page/utilts/models/academic.dart';
-import 'package:home_page/utilts/models/events.dart';
-import 'package:home_page/utilts/models/meal.dart';
-import 'package:home_page/utilts/models/sisLessons.dart';
-import 'package:home_page/utilts/models/sisLessons_db_adapter.dart';
+import 'package:home_page/models/academic.dart';
+import 'package:home_page/models/events.dart';
+import 'package:home_page/models/meal.dart';
+import 'package:home_page/models/sisLessons.dart';
+import 'package:home_page/models/sisLessons_db_adapter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 

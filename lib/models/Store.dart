@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:home_page/utilts/models/events.dart';
-import 'package:home_page/utilts/models/meal.dart';
-import 'package:home_page/utilts/services/events_service';
+import 'package:home_page/models/events.dart';
+import 'package:home_page/models/meal.dart';
+import 'package:home_page/services/events_service';
 // import 'package:home_page/utilts/services/events_service';
 
 class EventsStore {

@@ -4,8 +4,8 @@ import 'package:home_page/notifications.dart';
 import 'package:home_page/screens/events/diger.dart';
 import 'package:home_page/screens/events/konferans.dart';
 import 'package:home_page/screens/events/gezi.dart';
-import 'package:home_page/utilts/models/Store.dart';
-import 'package:home_page/utilts/models/events.dart';
+import 'package:home_page/models/Store.dart';
+import 'package:home_page/models/events.dart';
 
 class EventsCard extends StatefulWidget {
   @override

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/bottom.dart';
-import 'package:home_page/utilts/models/events.dart';
+import 'package:home_page/models/events.dart';
 
 class GeziPage extends StatelessWidget {
   final Trip trip;

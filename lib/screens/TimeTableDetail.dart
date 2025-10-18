@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:home_page/LessonAdd.dart';
+import 'package:home_page/lesson_add_page.dart';
 import 'package:home_page/bottom.dart';
 
 import 'package:home_page/screens/sis_webview_login.dart';
 
-import 'package:home_page/utilts/services/dbHelper.dart';
-import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/services/dbHelper.dart';
+import 'package:home_page/models/lesson.dart';
 import 'package:home_page/lessonDetail.dart';
 import 'package:home_page/methods.dart';
 
@@ -219,7 +219,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
               style: TextStyle(fontSize: 12),
             ),
             onTap: () {
-              methods.navigateToPage(context, LessonAdd());
+              methods.navigateToPage(context, LessonAddPage());
             },
           ),
         ),
@@ -407,7 +407,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
   void goToLessonAdd() async {
     var result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => LessonAdd()),
+      MaterialPageRoute(builder: (context) => LessonAddPage()),
     );
     if (!mounted) return;
     if (result == true) {

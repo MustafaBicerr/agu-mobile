@@ -3,7 +3,7 @@
 // double screenWidth = 0;
 // double screenHeight = 0;
 
-import 'package:home_page/utilts/models/events.dart';
+import 'package:home_page/models/events.dart';
 
 List<Events> _eventList = [];
 

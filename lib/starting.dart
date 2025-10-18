@@ -4,7 +4,7 @@ import 'package:home_page/auth.dart';
 import 'package:home_page/main.dart';
 import 'package:home_page/notifications.dart';
 import 'package:home_page/screens/starting_animation.dart';
-import 'package:home_page/utilts/models/Store.dart';
+import 'package:home_page/models/Store.dart';
 
 class MyRootApp extends StatelessWidget {
   final NotificationService notificationService;

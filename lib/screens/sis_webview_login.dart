@@ -14,8 +14,8 @@ import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/parser.dart' as dom;
 
-import 'package:home_page/utilts/services/dbHelper.dart';
-import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/services/dbHelper.dart';
+import 'package:home_page/models/lesson.dart';
 
 const String SIS_LOGIN_PAGE = "https://sis.agu.edu.tr/oibs/std/login.aspx";
 

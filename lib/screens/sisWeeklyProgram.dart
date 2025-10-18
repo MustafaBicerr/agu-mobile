@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:home_page/notifications.dart';
-import 'package:home_page/utilts/models/lesson.dart';
+import 'package:home_page/models/lesson.dart';
 
 class sisWeeklyProgram extends StatefulWidget {
   const sisWeeklyProgram({super.key});

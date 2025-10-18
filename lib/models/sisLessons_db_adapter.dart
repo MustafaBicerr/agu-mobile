@@ -1,4 +1,4 @@
-import 'package:home_page/utilts/models/sisLessons.dart';
+import 'package:home_page/models/sisLessons.dart';
 
 extension SisLessonsDb on sisLessons {
   static sisLessons fromDb(Map<String, Object?> m) {

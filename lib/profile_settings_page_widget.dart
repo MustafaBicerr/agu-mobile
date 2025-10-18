@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:home_page/main.dart';
 import 'package:home_page/notifications.dart';
+import 'package:home_page/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -28,9 +29,9 @@ class _ProfileSettingsPageWidgetState extends State<ProfileSettingsPageWidget> {
     super.initState();
     loadUserData();
   }
-
+  UserService userService = UserService();
   Future<void> loadUserData() async {
-    Map<String, dynamic>? data = await getUserData();
+    Map<String, dynamic>? data = await userService.getUserData();
 
     if (data != null) {
       setState(() {
