@@ -92,20 +92,8 @@ void main() async {
 
   runApp(MyRootApp(notificationService: notificationService));
 
-  // runApp(MaterialApp(
-  //   debugShowCheckedModeBanner: false, // İsteğe bağlı: Debug yazısını kaldırır
-  //   home: const AuthScreen(), // Başlangıç ekranı
-  //   initialRoute: '/',
-  //   routes: {
-  //     '/login': (context) => MyApp(
-  //           notificationService: NotificationService(),
-  //         ),
-  //   }, // Ana ekran
-  // ));
-
-  // İlk frame’den sonra arka planda tekrar meta kontrol (UI'ı bekletmeden)
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // EventsStore.instance.load(force: false);
+    
   });
 }
 
