@@ -47,12 +47,12 @@ class ShowProfileMenuWidget extends StatelessWidget {
             leading: const Icon(Icons.settings),
             title: const Text('Profil Ayarları'),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileSettingsPage(),
-                ),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (context) => const ProfileSettingsPage(),
+              //   ),
+              // );
             },
           ),
           ListTile(
