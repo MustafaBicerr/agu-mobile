@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:home_page/screens/lesson_add_page.dart';
 import 'package:home_page/screens/auth_screen.dart';
@@ -15,10 +16,13 @@ import 'package:home_page/screens/attendance.dart';
 import 'package:home_page/bottom.dart';
 import 'package:home_page/screens/events/eventsCard.dart';
 import 'package:home_page/screens/main_page.dart';
+import 'package:home_page/screens/notification_screen.dart';
 import 'package:home_page/screens/refectory.dart';
 import 'package:home_page/screens/starting_animation.dart';
-import 'package:home_page/services/user_service.dart';
+import 'package:home_page/services/events_service.dart';
 import 'package:home_page/starting.dart';
+import 'package:home_page/state/lesson_cubit.dart';
+import 'package:home_page/state/user_cubit.dart';
 import 'package:home_page/utilts/constants/constants.dart';
 import 'package:home_page/models/Store.dart';
 import 'package:home_page/services/apiService.dart';
@@ -30,7 +34,6 @@ import 'package:home_page/screens/menu_page.dart';
 import 'package:home_page/methods.dart';
 import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/upcomingLesson.dart';
-import 'package:home_page/services/events_service';
 import 'package:home_page/utilts/constants/image_constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
@@ -44,6 +47,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'dart:io';
+
+final Dbhelper dbHelper = Dbhelper();
+final NotificationService notificationService = NotificationService();
+final EventsService eventsService = EventsService(baseUrlEvents);
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -113,7 +120,6 @@ class _MyAppState extends State<MyApp> {
   DailyAttendanceScreenState attendance = DailyAttendanceScreenState();
 
   final Dbhelper dbHelper = Dbhelper();
-  int _selectedIndex = 2;
   List<Lesson>? lessons; // Ders listesi
   MealApi mealApi = MealApi();
   String? imageUrl;
@@ -129,21 +135,21 @@ class _MyAppState extends State<MyApp> {
 
   Map<String, dynamic>? userData;
 
-  UserService userService = UserService();
-  void getAllDatas() {
-    if (isDataFetched != true) {
-      lessons = []; // Başlangıçta boş liste
-      getLessons(); // Dersleri yükle
-      getDailyLesson();
-      userService.loadProfileImage();
-      userService.loadUserData();
+  // void getAllDatas() {            //bu fonksiyonun değişmesi lazım
+  //   if (isDataFetched != true) {
+  //     lessons = [];
+  //     getLessons();
+  //     getDailyLesson();
+  //     userService.loadProfileImage();
+  //     userService.loadUserData();
 
-      isDataFetched = true;
-    }
-  }
+  //     isDataFetched = true;
+  //   }
+  // }
 
   @override
   void initState() {
+    //initState değişicek
     final istanbul = tz.getLocation('Europe/Istanbul');
     final now = tz.TZDateTime.now(istanbul);
 
@@ -156,7 +162,7 @@ class _MyAppState extends State<MyApp> {
       await requestNotificationPermission(context);
     });
     // getUserData();
-    getAllDatas();
+    //////getAllDatas();
 
     // _loadProfileImage();
     // loadUserData();
@@ -165,90 +171,41 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    //aşağıdaki değişkenleri sizedbox larda her cihaza uygun olması için kullanacağız.
-
-    return MainPage();
+    return MaterialApp(
+      home: MultiBlocProvider(providers: [
+        BlocProvider<LessonCubit>(
+          // LessonCubit, ihtiyacı olan servisleri alarak oluşturulur
+          create: (context) => LessonCubit(dbHelper, notificationService),
+        ),
+        BlocProvider<UserCubit>(
+          create: (context) => UserCubit(),
+        ),
+      ], child: MainPage()),
+    );
   }
 
   void goToDetail(Lesson lesson) async {
+    // bunun için route kullanıccaz fonksiyon yazmaya gerek yok
     var result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => LessonDetail(lesson: lesson)),
+      MaterialPageRoute(
+          builder: (context) => LessonDetailScreen(lesson: lesson)),
     );
 
-    // if (result != null && result == true) {
-    getLessons();
-    // }
+    // // if (result != null && result == true) {
+    //    lessonService.getLessons();
+    // // }
   }
 
   void goToLessonAdd() async {
+    // bunun için route kullanıccaz fonksiyon yazmaya gerek yok
     var result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => LessonAddPage()),
     );
 
     // if (result != null && result == true) {
-    getLessons();
+    //    lessonService.getLessons();
     // }
   }
-
-  void _onItemTapped(int index) async {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    if (index == 0) {
-      await Navigator.push(
-          // context, MaterialPageRoute(builder: (context) => sisLessonsPage()));
-          context,
-          MaterialPageRoute(builder: (context) => Timetabledetail()));
-    } else if (index == 3) {
-      methods.navigateToPage(context, RefectoryScreen());
-    } else if (index == 4) {
-      await Navigator.push(context,
-          MaterialPageRoute(builder: (context) => DailyAttendanceScreen()));
-    }
-
-    // Kullanıcı geri döndüğünde anasayfa seçili olacak
-    setState(() {
-      _selectedIndex = 2;
-    });
-  }
-
-  Widget _buildMenuItem(
-      BuildContext context, String title, String value, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(icon, color: Colors.orange[300], size: 24.0),
-        const SizedBox(width: 12.0),
-        Expanded(
-          child: Text(
-            "$title: $value",
-            style: const TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<List<Lesson>> getDailyLesson() async {
-    String currentDay = methods.getDayName();
-    List<Lesson> dailyLessons = [];
-    var allLesson = await dbHelper.getLessons();
-
-    setState(() {
-      dailyLessons = allLesson
-          .where(
-              (lesson) => lesson.day == currentDay && lesson.isProcessed == 0)
-          .toList();
-    });
-
-    return dailyLessons;
-  }
-
-  // ignore: non_constant_identifier_names
 }
