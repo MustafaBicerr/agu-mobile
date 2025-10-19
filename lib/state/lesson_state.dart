@@ -1,4 +1,6 @@
-import 'package:home_page/models/lesson.dart';
+
+
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 
 abstract class LessonState {}
 

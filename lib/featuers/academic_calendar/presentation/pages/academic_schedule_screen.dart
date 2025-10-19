@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/featuers/academic_calendar/data/data_sources/academic_calendar_data_source';
-import 'package:home_page/models/academic.dart';
+import 'package:home_page/featuers/academic_calendar/data/data_sources/academic_calendar_data_source.dart';
+
+import 'package:home_page/featuers/academic_calendar/data/models/academic.dart';
+
 import 'package:intl/intl.dart';
 
 class AcademicCalendarScreen extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/bottom.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
 
 import 'package:webview_flutter/webview_flutter.dart'; // WebView için gerekli paket
 

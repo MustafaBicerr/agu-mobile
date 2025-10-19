@@ -7,15 +7,17 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:home_page/animations/progress_ring_widget.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/screens/TimeTableDetail.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
+import 'package:home_page/featuers/splash/presentation/widgets/progress_ring_widget.dart';
+
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/parser.dart' as dom;
 
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/models/lesson.dart';
+
 
 const String SIS_LOGIN_PAGE = "https://sis.agu.edu.tr/oibs/std/login.aspx";
 

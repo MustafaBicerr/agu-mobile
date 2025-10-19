@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:home_page/main.dart' show flutterLocalNotificationsPlugin;
-import 'package:home_page/models/lesson.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/methods.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

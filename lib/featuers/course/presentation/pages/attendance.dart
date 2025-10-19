@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/models/lesson.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DailyAttendanceScreen extends StatefulWidget {

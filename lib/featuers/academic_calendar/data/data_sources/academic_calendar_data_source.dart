@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:home_page/core/constants/constants.dart';
+import 'package:home_page/featuers/academic_calendar/data/models/academic.dart';
 import 'package:http/http.dart' as http;
 class AcademicApi {
   Future<List<Academic>> fetchAcademicData() async {

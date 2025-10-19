@@ -1,8 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:home_page/models/lesson.dart';
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/services/notification_service.dart';
+
 // State dosyasını import edin:
 import 'lesson_state.dart'; 
 // methods'ı uygun yerden import ettiğinizden emin olun (veya inject edin)

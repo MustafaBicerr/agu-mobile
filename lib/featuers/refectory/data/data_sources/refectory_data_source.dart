@@ -1,7 +1,9 @@
-import 'package:home_page/models/meal.dart';
+
+import 'package:home_page/core/constants/constants.dart';
+import 'package:home_page/featuers/refectory/data/models/meal.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:home_page/utilts/constants/constants.dart';
+
 
 class MealApi {
   Future<List<Meal>> fetchMeals() async {

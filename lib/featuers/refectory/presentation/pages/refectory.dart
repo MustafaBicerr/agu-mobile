@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/models/Store.dart';
-import 'package:home_page/models/meal.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/events/data/models/Store.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
+import 'package:home_page/featuers/refectory/data/models/meal.dart';
+
+
 
 class RefectoryScreen extends StatefulWidget {
   @override

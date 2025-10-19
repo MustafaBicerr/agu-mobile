@@ -1010,7 +1010,7 @@
 // }
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:home_page/bottom.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:palette_generator/palette_generator.dart';

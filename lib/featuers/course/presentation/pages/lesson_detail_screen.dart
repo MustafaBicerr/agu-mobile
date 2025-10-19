@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/screens/TimeTableDetail.dart';
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/models/lesson.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart' hide methods;
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
+
 
 class LessonDetailScreen extends StatefulWidget {
   final Lesson lesson; // Seçilen ders

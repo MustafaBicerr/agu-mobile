@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:home_page/models/events.dart';
-import 'package:home_page/models/meal.dart';
-import 'package:home_page/services/events_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/events_service.dart';
+import 'package:home_page/featuers/events/data/models/events.dart';
+import 'package:home_page/featuers/refectory/data/models/meal.dart';
+
+
 
 // import 'package:home_page/utilts/services/events_service';
 

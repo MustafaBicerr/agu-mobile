@@ -6,35 +6,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:home_page/screens/lesson_add_page.dart';
-import 'package:home_page/screens/auth_screen.dart';
-import 'package:home_page/buttons/buttons.dart';
-import 'package:home_page/data/database_service.dart';
-import 'package:home_page/profileMenuWidget.dart';
-import 'package:home_page/screens/TimeTableDetail.dart';
-import 'package:home_page/screens/attendance.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/screens/events/eventsCard.dart';
-import 'package:home_page/screens/main_page.dart';
-import 'package:home_page/screens/notification_screen.dart';
-import 'package:home_page/screens/refectory.dart';
-import 'package:home_page/screens/starting_animation.dart';
-import 'package:home_page/services/events_service.dart';
+import 'package:home_page/core/constants/constants.dart';
+import 'package:home_page/core/notification/notification_screen.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/data_sources/events_service.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/course/presentation/pages/attendance.dart';
+import 'package:home_page/featuers/course/presentation/pages/lesson_add_page.dart';
+import 'package:home_page/featuers/course/presentation/pages/lesson_detail_screen.dart';
+import 'package:home_page/featuers/events/data/models/Store.dart';
+import 'package:home_page/featuers/home/presentation/pages/main_page.dart';
+import 'package:home_page/featuers/refectory/data/data_sources/refectory_data_source.dart';
+
+import 'package:home_page/methods.dart';
+
 import 'package:home_page/starting.dart';
 import 'package:home_page/state/lesson_cubit.dart';
 import 'package:home_page/state/user_cubit.dart';
-import 'package:home_page/utilts/constants/constants.dart';
-import 'package:home_page/models/Store.dart';
-import 'package:home_page/services/apiService.dart';
-import 'package:home_page/services/database_matching_service.dart';
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/models/lesson.dart';
-import 'package:home_page/screens/lesson_detail_screen.dart';
-import 'package:home_page/screens/menu_page.dart';
-import 'package:home_page/methods.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/upcomingLesson.dart';
-import 'package:home_page/utilts/constants/image_constants.dart';
+
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -174,7 +164,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: MultiBlocProvider(providers: [
         BlocProvider<LessonCubit>(
-          // LessonCubit, ihtiyacı olan servisleri alarak oluşturulur
+          
           create: (context) => LessonCubit(dbHelper, notificationService),
         ),
         BlocProvider<UserCubit>(

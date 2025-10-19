@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/buttons/customButton.dart';
-import 'package:home_page/buttons/loginService.dart';
-import 'package:home_page/buttons/sis_agu.dart';
+import 'package:home_page/featuers/menu/presentation/pages/password_screen.dart';
+import 'package:home_page/featuers/web_access/domain/usecases/loginService.dart';
+import 'package:home_page/featuers/web_access/presentation/pages/sis_agu.dart';
+import 'package:home_page/featuers/web_access/presentation/widgets/customButton.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/screens/password_screen.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Buttons extends StatefulWidget {

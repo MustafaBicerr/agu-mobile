@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:home_page/data/lesson.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/services/notification_service.dart';
+
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

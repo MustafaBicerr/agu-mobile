@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/animations/progress_ring_widget.dart';
+import 'package:home_page/featuers/splash/presentation/widgets/progress_ring_widget.dart';
 
 class startingAnimation extends StatefulWidget {
   const startingAnimation({super.key});

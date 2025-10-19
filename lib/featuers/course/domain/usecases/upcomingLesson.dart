@@ -1,4 +1,5 @@
-import 'package:home_page/models/lesson.dart';
+
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/methods.dart';
 
 Lesson? findUpcomingLesson(List<Lesson> lessons) {

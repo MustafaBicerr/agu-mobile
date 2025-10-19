@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:home_page/bottom.dart';
-import 'package:home_page/buttons/buttons.dart';
-import 'package:home_page/screens/lesson_add_page.dart';
+import 'package:home_page/core/constants/image_constants.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/auth/presentation/widgets/profileMenuWidget.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/course/domain/usecases/upcomingLesson.dart';
+import 'package:home_page/featuers/course/presentation/pages/lesson_add_page.dart';
+import 'package:home_page/featuers/events/presentation/widgets/eventsCard.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
+import 'package:home_page/featuers/menu/presentation/widgets/menu_page.dart';
+import 'package:home_page/featuers/refectory/presentation/pages/refectory.dart';
+import 'package:home_page/featuers/web_access/presentation/widgets/buttons.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/models/lesson.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/profileMenuWidget.dart';
-import 'package:home_page/screens/events/eventsCard.dart';
-import 'package:home_page/screens/menu_page.dart' hide methods;
-import 'package:home_page/screens/refectory.dart';
-import 'package:home_page/services/dbHelper.dart';
 import 'package:home_page/state/lesson_cubit.dart';
 import 'package:home_page/state/user_cubit.dart';
 import 'package:home_page/state/user_state.dart';
-import 'package:home_page/upcomingLesson.dart';
-import 'package:home_page/utilts/constants/image_constants.dart';
+
 
 
 class MainPage extends StatelessWidget {

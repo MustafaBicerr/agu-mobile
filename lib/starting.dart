@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:home_page/screens/auth_screen.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/auth/presentation/pages/auth_screen.dart';
+import 'package:home_page/featuers/events/data/models/Store.dart';
+import 'package:home_page/featuers/splash/presentation/widgets/starting_animation.dart';
 import 'package:home_page/main.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/screens/starting_animation.dart';
-import 'package:home_page/models/Store.dart';
+
 
 class MyRootApp extends StatelessWidget {
   final NotificationService notificationService;

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:home_page/featuers/course/domain/usecases/sis_webview_login.dart';
+import 'package:home_page/featuers/course/presentation/pages/lesson_add_page.dart';
+import 'package:home_page/featuers/course/presentation/pages/lesson_detail_screen.dart';
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
 
-import 'package:home_page/screens/lesson_add_page.dart';
-import 'package:home_page/bottom.dart';
 
-import 'package:home_page/screens/sis_webview_login.dart';
-
-import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/models/lesson.dart';
-import 'package:home_page/screens/lesson_detail_screen.dart';
 import 'package:home_page/methods.dart';
 
 Methods methods = Methods();

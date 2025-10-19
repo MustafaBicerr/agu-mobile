@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/screens/events/diger.dart';
-import 'package:home_page/screens/events/konferans.dart';
-import 'package:home_page/screens/events/gezi.dart';
-import 'package:home_page/models/Store.dart';
-import 'package:home_page/models/events.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/events/data/models/Store.dart';
+import 'package:home_page/featuers/events/data/models/events.dart';
+import 'package:home_page/featuers/events/presentation/pages/diger.dart';
+import 'package:home_page/featuers/events/presentation/pages/gezi.dart';
+import 'package:home_page/featuers/events/presentation/pages/konferans.dart';
+
 
 class EventsCard extends StatefulWidget {
   @override

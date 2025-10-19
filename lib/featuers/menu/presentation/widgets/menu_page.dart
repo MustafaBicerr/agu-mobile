@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/screens/academic_schedule_screen.dart';
-import 'package:home_page/screens/developers_screen.dart';
-import 'package:home_page/screens/feedbacks_screen.dart';
-import 'package:home_page/screens/guide_page.dart';
-import 'package:home_page/screens/notification_screen.dart';
-import 'package:home_page/screens/password_screen.dart';
-import 'package:home_page/screens/wifi_page.dart';
+import 'package:home_page/core/notification/notification_screen.dart';
+import 'package:home_page/featuers/academic_calendar/presentation/pages/academic_schedule_screen.dart';
+import 'package:home_page/featuers/menu/presentation/pages/developers_screen.dart';
+import 'package:home_page/featuers/menu/presentation/pages/feedbacks_screen.dart';
+import 'package:home_page/featuers/menu/presentation/pages/guide_page.dart';
+import 'package:home_page/featuers/menu/presentation/pages/password_screen.dart';
+import 'package:home_page/featuers/menu/presentation/pages/wifi_page.dart';
 import 'package:home_page/methods.dart';
 
 Methods methods = Methods();

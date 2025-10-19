@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart';
+import 'package:home_page/featuers/course/presentation/pages/attendance.dart';
+import 'package:home_page/featuers/home/presentation/pages/news_page.dart';
+import 'package:home_page/featuers/refectory/presentation/pages/refectory.dart';
 import 'package:home_page/main.dart';
-import 'package:home_page/screens/news_page.dart';
-import 'package:home_page/services/notification_service.dart';
-import 'package:home_page/screens/TimeTableDetail.dart';
-import 'package:home_page/screens/attendance.dart';
-import 'package:home_page/screens/class_schedule_screen.dart';
-import 'package:home_page/screens/refectory.dart';
-import 'package:home_page/yemekhane_gunluk_tablo.dart';
+
 
 Widget bottomBar2(BuildContext context, int currentIndex) {
   return BottomNavigationBar(

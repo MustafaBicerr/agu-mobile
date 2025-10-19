@@ -1,4 +1,5 @@
-import 'package:home_page/services/notification_service.dart';
+
+import 'package:home_page/core/notification/notification_service.dart';
 
 class Events {
   String? kulup;

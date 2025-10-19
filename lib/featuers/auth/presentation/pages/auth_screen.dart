@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:home_page/core/notification/notification_service.dart';
+import 'package:home_page/featuers/auth/domain/usecases/user_image_picker.dart';
 import 'package:home_page/main.dart';
-import 'package:home_page/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:home_page/user_image_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:home_page/featuers/events/data/models/events.dart';
+import 'package:home_page/featuers/refectory/data/models/meal.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// MODEL IMPORTLARI — yolları kendi projene göre düzelt
-import 'package:home_page/models/events.dart';
-import 'package:home_page/models/meal.dart';
+
 
 class AllData {
   AllData({

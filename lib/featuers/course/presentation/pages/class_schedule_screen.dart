@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:home_page/bottom.dart'; // Örnek BottomBar
+import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
+
 
 class ClassScheduleScreen extends StatefulWidget {
   @override

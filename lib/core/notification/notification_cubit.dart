@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/lesson.dart';
+
 
 // Abstraction over your existing notification service
 abstract class INotificationService {
