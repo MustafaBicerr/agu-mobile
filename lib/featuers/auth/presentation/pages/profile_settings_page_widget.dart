@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:home_page/featuers/auth/presentation/bloc/user_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user/user_cubit.dart';
 
 
 class ProfileSettingsPageWidget extends StatefulWidget {
