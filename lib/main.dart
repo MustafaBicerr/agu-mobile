@@ -112,7 +112,7 @@ class _MyAppState extends State<MyApp> {
 
   DailyAttendanceScreenState attendance = DailyAttendanceScreenState();
 
-  final Dbhelper dbHelper = Dbhelper(); 
+  final Dbhelper dbHelper = Dbhelper();
   int _selectedIndex = 2;
   List<Lesson>? lessons; // Ders listesi
   MealApi mealApi = MealApi();
@@ -133,7 +133,7 @@ class _MyAppState extends State<MyApp> {
   void getAllDatas() {
     if (isDataFetched != true) {
       lessons = []; // Başlangıçta boş liste
-       getLessons(); // Dersleri yükle
+      getLessons(); // Dersleri yükle
       getDailyLesson();
       userService.loadProfileImage();
       userService.loadUserData();
@@ -167,10 +167,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     //aşağıdaki değişkenleri sizedbox larda her cihaza uygun olması için kullanacağız.
 
-
     return MainPage();
   }
-
 
   void goToDetail(Lesson lesson) async {
     var result = await Navigator.push(
@@ -179,7 +177,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     // if (result != null && result == true) {
-       getLessons();
+    getLessons();
     // }
   }
 
@@ -190,7 +188,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     // if (result != null && result == true) {
-       getLessons();
+    getLessons();
     // }
   }
 
@@ -217,7 +215,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
- 
   Widget _buildMenuItem(
       BuildContext context, String title, String value, IconData icon) {
     return Row(
@@ -255,5 +252,3 @@ class _MyAppState extends State<MyApp> {
 
   // ignore: non_constant_identifier_names
 }
-
-
