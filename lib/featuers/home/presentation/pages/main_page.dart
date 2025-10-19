@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_page/bottom.dart';
 import 'package:home_page/buttons/buttons.dart';
 import 'package:home_page/screens/lesson_add_page.dart';
@@ -10,35 +11,33 @@ import 'package:home_page/screens/events/eventsCard.dart';
 import 'package:home_page/screens/menu_page.dart' hide methods;
 import 'package:home_page/screens/refectory.dart';
 import 'package:home_page/services/dbHelper.dart';
-import 'package:home_page/services/user_service.dart';
+import 'package:home_page/state/lesson_cubit.dart';
+import 'package:home_page/state/user_cubit.dart';
+import 'package:home_page/state/user_state.dart';
 import 'package:home_page/upcomingLesson.dart';
 import 'package:home_page/utilts/constants/image_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-  
+
+class MainPage extends StatelessWidget {
+   MainPage({super.key});
+
   get notificationService => null;
 
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
+ 
 
-class _MainPageState extends State<MainPage> {
-  final int _selectedIndex = 2;
-   // Varsayılan olarak Anasayfa seçili
-  final Dbhelper dbHelper = Dbhelper(); // Veritabanı yardımıcısı
-  List<Lesson>? lessons; // Ders listesi
-  int lessonCount = 0; // Ders sayısı
-
-
+  // Varsayılan olarak Anasayfa seçili
+  final Dbhelper dbHelper = Dbhelper(); 
+ // Veritabanı yardımıcısı
+  List<Lesson>? lessons; 
+ // Ders listesi
+  int lessonCount = 0; 
+ // Ders sayısı
   @override
   Widget build(BuildContext context) {
+    context.read<LessonCubit>().loadLessons();
+    context.read<UserCubit>().loadAllUserData();
 
-    double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
-    UserService userService = UserService();
 
     return Scaffold(
       appBar: AppBar(
@@ -63,41 +62,56 @@ class _MainPageState extends State<MainPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Text(
-                  userService.userData != null ? userService.userData !['name'] ?? "İsim yok" : "",
-                  style: const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return const ShowProfileMenuWidget();
+            child: BlocBuilder<UserCubit, UserState>(
+              builder: (context, state) {
+
+                if (state is UserLoading) {
+                  return const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
+                String userName = "";
+                String? userImageUrl;
+
+                if (state is UserLoaded) {
+                  userName = state.userData?['name'] ?? "İsim yok";
+                  userImageUrl = state.profileImageUrl;
+                }
+
+                
+                return Row(
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                          color: Colors.black, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return const ShowProfileMenuWidget();
+                          },
+                        );
                       },
-                    );
-                  },
-                  child: userService.isLoading
-                      ? const SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : userService.imageUrl != null && userService.imageUrl!.isNotEmpty
+                      child: userImageUrl != null && userImageUrl.isNotEmpty
                           ? CircleAvatar(
-                              backgroundImage: NetworkImage(userService.imageUrl!),
-                              radius: 28, // Boyutu büyüttük
+                              backgroundImage: NetworkImage(userImageUrl),
+                              radius: 28,
                             )
                           : const Icon(
                               Icons.account_circle,
-                              size: 44, // Varsayılan ikonu büyüttük
+                              size: 44,
                               color: Colors.grey,
                             ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -121,7 +135,7 @@ class _MainPageState extends State<MainPage> {
                 SizedBox(
                   height: screenHeight * 0.025,
                 ),
-                SizedBox(height: screenHeight * 0.20, child: TimeTableCard()),
+                SizedBox(height: screenHeight * 0.20, child: TimeTableCard(context)),
                 // SizedBox(
                 //   height: screenHeight * 0.025,
                 // ),
@@ -142,8 +156,9 @@ class _MainPageState extends State<MainPage> {
       bottomNavigationBar: bottomBar2(context, 2), // Alt gezinme çubuğu
     );
   }
+
   /////////////////////////////////////////////////////////
-    Widget TimeTableCard() {
+  Widget TimeTableCard(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
@@ -159,7 +174,7 @@ class _MainPageState extends State<MainPage> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
             onTap: () {
-              goToLessonAdd();
+              goToLessonAdd(context);
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -221,20 +236,15 @@ class _MainPageState extends State<MainPage> {
       );
     }
   }
-  
-    void goToLessonAdd() async {
+
+  void goToLessonAdd(BuildContext context) async {
     var result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => LessonAddPage()),
     );
 
-    if (result != null && result == true) {
-         getLessons();  
-    }
+    // if (result != null && result == true) {
+    //   getLessons();
+    // }
   }
-
-
-
-
 }
-

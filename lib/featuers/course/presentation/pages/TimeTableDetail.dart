@@ -303,7 +303,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        lesson.name!.toUpperCase() ?? "Ders Adı Yok",
+                        lesson.name!.toUpperCase(),
                         maxLines: 1,
                         style: const TextStyle(
                           fontSize: 18,
@@ -426,7 +426,7 @@ class _TimetabledetailState extends State<Timetabledetail> {
   void goToDetail(Lesson lesson) async {
     var result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => LessonDetail(lesson: lesson)),
+      MaterialPageRoute(builder: (context) => LessonDetailScreen(lesson: lesson)),
     );
     if (!mounted) return;
 
