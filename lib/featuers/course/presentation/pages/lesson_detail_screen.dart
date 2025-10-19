@@ -1,43 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
-import 'package:home_page/featuers/course/data/models/lesson.dart';
-import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart' hide methods;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_page/featuers/course/domain/entities/lessonEntity.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_bloc.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_event.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_state.dart';
+import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart';
 import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
 
-
 class LessonDetailScreen extends StatefulWidget {
-  final Lesson lesson; // Seçilen ders
-
-  LessonDetailScreen({required this.lesson});
+  final LessonEntity lesson;
+  const LessonDetailScreen({super.key, required this.lesson});
 
   @override
-  State<LessonDetailScreen> createState() => _LessonDetailState();
+  State<LessonDetailScreen> createState() => _LessonDetailScreenState();
 }
 
-class _LessonDetailState extends State<LessonDetailScreen> {
-  var dbHelper = Dbhelper();
-  TextEditingController txtName = TextEditingController();
-  TextEditingController txtClass = TextEditingController();
-  TextEditingController txtTeacher = TextEditingController();
-  int? attendance;
+class _LessonDetailScreenState extends State<LessonDetailScreen> {
+  final txtName = TextEditingController();
+  final txtClass = TextEditingController();
+  final txtTeacher = TextEditingController();
+
   String? selectedDay;
   String? selectedHour1;
   String? selectedHour2;
   String? selectedHour3;
+  int? attendance;
 
   @override
   void initState() {
     super.initState();
-    // Mevcut ders bilgilerini forma doldur
-    txtName.text = widget.lesson.name!.toUpperCase();
-    txtClass.text = widget.lesson.place ?? '';
-    selectedDay = widget.lesson.day ?? "";
-    selectedHour1 = widget.lesson.hour1;
-    selectedHour2 = widget.lesson.hour2;
-    selectedHour3 = widget.lesson.hour3;
-    txtTeacher.text = widget.lesson.teacher ?? "";
-    attendance = widget.lesson.attendance;
+    final lesson = widget.lesson;
+    txtName.text = lesson.name ?? '';
+    txtClass.text = lesson.place ?? '';
+    txtTeacher.text = lesson.teacher ?? '';
+    selectedDay = lesson.day;
+    selectedHour1 = lesson.hour1;
+    selectedHour2 = lesson.hour2;
+    selectedHour3 = lesson.hour3;
+    attendance = lesson.attendance ?? 0;
   }
 
   @override
@@ -45,142 +45,98 @@ class _LessonDetailState extends State<LessonDetailScreen> {
     return Scaffold(
       bottomNavigationBar: bottomBar2(context, 0),
       appBar: AppBar(
-        leading: IconButton(
-            onPressed: () => methods.navigateToPage(context, Timetabledetail()),
-            icon: Icon(Icons.arrow_back)),
         title: const Text("Ders Detayı"),
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => showWarningDialog(context),
-            icon: const Icon(
-              Icons.delete,
-              color: Colors.red,
-            ),
-            tooltip: "Dersi Sil",
-          )
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _showDeleteDialog(context),
+          ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [
-          Color.fromARGB(255, 255, 255, 255),
-          Color.fromARGB(255, 39, 113, 148),
-          Color.fromARGB(255, 255, 255, 255),
-        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            // buildSectionTitle("Ders Bilgileri"),
-            const SizedBox(height: 15),
-            buildInfoCard("Ders Adı", buildNameField()),
-            const SizedBox(height: 10),
-            buildInfoCard("Sınıf", buildClassField()),
-            const SizedBox(height: 20),
-            // buildSectionTitle("Öğretmen Bilgileri"),
-            const SizedBox(
-              height: 10,
-            ),
-            buildInfoCard("Öğretmen Adı", buildTeacherField()),
-            // buildSectionTitle("Ders Günü"),
-            const SizedBox(height: 15),
-            buildInfoCard("Gün Seçimi", buildDayField()),
-            const SizedBox(height: 10),
-            // buildSectionTitle("Ders Saatleri"),
-            const SizedBox(
-              height: 15,
-            ),
-            buildInfoCard("Birinci Ders Saati", buildHour1Field()),
-            buildInfoCard("İkinci Ders Saati", buildHour2Field()),
-            buildInfoCard("Üçüncü Ders Saati", buildHour3Field()),
+      body: BlocConsumer<LessonBloc, LessonState>(
+        listener: (context, state) {
+          if (state is LessonActionSuccess) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => Timetabledetail()),
+            );
+          } else if (state is LessonError) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          if (state is LessonLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            const SizedBox(
-              height: 30,
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                buildSaveButton(),
-                buildDeleteButton(),
-              ],
-            ),
-            const SizedBox(
-              height: 15,
-            ),
-
-            buildInfoCard("Devamsızlık", buildAttendanceField()),
-            const SizedBox(
-              height: 15,
-            ),
-            buildSaveAttendanceButton(),
-          ],
-        ),
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _buildCard("Ders Adı", _buildTextField(txtName, "Ders adı")),
+              _buildCard("Sınıf", _buildTextField(txtClass, "Sınıf")),
+              _buildCard("Öğretmen", _buildTextField(txtTeacher, "Öğretmen")),
+              _buildCard("Gün", _buildDayDropdown()),
+              _buildCard("Ders Saatleri", _buildHoursDropdowns()),
+              _buildCard("Devamsızlık", _buildAttendanceDropdown()),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildActionButton(
+                    text: "Dersi Güncelle",
+                    color: Colors.blue,
+                    onPressed: () => _showConfirmDialog(context, false),
+                  ),
+                  _buildActionButton(
+                    text: "Devamsızlığı Güncelle",
+                    color: Colors.green,
+                    onPressed: () => _showConfirmDialog(context, true),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.blueGrey[800],
-      ),
-    );
-  }
-
-  buildInfoCard(String title, Widget content) {
+  Widget _buildCard(String title, Widget child) {
     return Card(
-      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(15.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            content,
+            child,
           ],
         ),
       ),
     );
   }
 
-  buildNameField() {
+  Widget _buildTextField(TextEditingController controller, String hint) {
     return TextField(
-        decoration: InputDecoration(
-            hintText: "Ders Adını Giriniz",
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        controller: txtName);
-  }
-
-  buildClassField() {
-    return TextField(
+      controller: controller,
       decoration: InputDecoration(
-          hintText: "Sınıf",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      controller: txtClass,
+        hintText: hint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 
-  buildTeacherField() {
-    return TextField(
-      decoration: InputDecoration(
-          hintText: "Öğretmen",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      controller: txtTeacher,
-    );
-  }
-
-  buildDayField() {
-    final List<String> days = [
+  Widget _buildDayDropdown() {
+    final days = [
       "Pazartesi",
       "Salı",
       "Çarşamba",
@@ -190,26 +146,18 @@ class _LessonDetailState extends State<LessonDetailScreen> {
       "Pazar"
     ];
     return DropdownButtonFormField<String>(
-      // initialValue: selectedDay,
+      value: selectedDay,
+      items:
+          days.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+      onChanged: (v) => setState(() => selectedDay = v),
       decoration: InputDecoration(
-          hintText: selectedDay ?? "Ders Gününü Seçiniz",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      items: days
-          .map((day) => DropdownMenuItem(
-                value: day,
-                child: Text(day),
-              ))
-          .toList(),
-      onChanged: (value) {
-        setState(() {
-          selectedDay = value;
-        });
-      },
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 
-  buildHour1Field() {
-    final List<String> hours = [
+  Widget _buildHoursDropdowns() {
+    final hours = [
       "08:00-08:45",
       "09:00-09:45",
       "10:00-10:45",
@@ -221,415 +169,148 @@ class _LessonDetailState extends State<LessonDetailScreen> {
       "16:00-16:45",
       "17:00-17:45",
       "18:00-18:45",
-      "19:00-19:45",
-      "20:00-20:45",
     ];
 
-    return DropdownButtonFormField<String>(
-      // initialValue: selectedHour1,
-      decoration: InputDecoration(
-          hintText: selectedHour1 ?? "İlk Ders Saatinizi Giriniz",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      items: hours
-          .map((hour) => DropdownMenuItem(
-                value: hour,
-                child: Text(hour),
-              ))
-          .toList(),
-      onChanged: (value) {
-        setState(() {
-          selectedHour1 = value;
-        });
-      },
-    );
-  }
-
-  buildHour2Field() {
-    final List<String> hours = [
-      "08:00-08:45",
-      "09:00-09:45",
-      "10:00-10:45",
-      "11:00-11:45",
-      "12:00-12:45",
-      "13:00-13:45",
-      "14:00-14:45",
-      "15:00-15:45",
-      "16:00-16:45",
-      "17:00-17:45",
-      "18:00-18:45",
-      "19:00-19:45",
-    ];
-
-    return SingleChildScrollView(
-      child: DropdownButtonFormField<String>(
-          // initialValue: selectedHour2,
-          decoration: InputDecoration(
-              hintText: selectedHour2 ?? "İkinci Ders Saatinizi Giriniz",
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+    return Column(
+      children: [
+        DropdownButtonFormField<String>(
+          value: selectedHour1,
           items: hours
-              .map((hour) => DropdownMenuItem(
-                    value: hour,
-                    child: Text(hour),
-                  ))
+              .map((h) => DropdownMenuItem(value: h, child: Text(h)))
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedHour2 = value;
-            });
-          }),
-    );
-  }
-
-  buildHour3Field() {
-    final List<String> hours = [
-      "08:00-08:45",
-      "09:00-09:45",
-      "10:00-10:45",
-      "11:00-11:45",
-      "12:00-12:45",
-      "13:00-13:45",
-      "14:00-14:45",
-      "15:00-15:45",
-      "16:00-16:45",
-      "17:00-17:45",
-      "18:00-18:45",
-      "19:00-19:45",
-    ];
-
-    return SingleChildScrollView(
-      child: DropdownButtonFormField<String>(
-          // initialValue: selectedHour2,
-          decoration: InputDecoration(
-              hintText: selectedHour3 ?? "Üçüncü Ders Saatinizi Giriniz",
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+          onChanged: (v) => setState(() => selectedHour1 = v),
+          decoration: const InputDecoration(labelText: "1. Saat"),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: selectedHour2,
           items: hours
-              .map((hour) => DropdownMenuItem(
-                    value: hour,
-                    child: Text(hour),
-                  ))
+              .map((h) => DropdownMenuItem(value: h, child: Text(h)))
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedHour3 = value;
-            });
-          }),
-    );
-  }
-
-  buildAttendanceField() {
-    final List<int> numbers = [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ];
-
-    return SingleChildScrollView(
-      child: DropdownButtonFormField<String>(
-          // initialValue: selectedHour2,
-          decoration: InputDecoration(
-              hintText: attendance.toString(),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-          items: numbers
-              .map((number) => DropdownMenuItem(
-                    value: number.toString(),
-                    child: Text("$number"),
-                  ))
+          onChanged: (v) => setState(() => selectedHour2 = v),
+          decoration: const InputDecoration(labelText: "2. Saat"),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: selectedHour3,
+          items: hours
+              .map((h) => DropdownMenuItem(value: h, child: Text(h)))
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              attendance = int.tryParse(value!);
-            });
-          }),
+          onChanged: (v) => setState(() => selectedHour3 = v),
+          decoration: const InputDecoration(labelText: "3. Saat"),
+        ),
+      ],
     );
   }
 
-  buildSaveButton() {
-    return ElevatedButton.icon(
-      onPressed: () => showStateUpdateDialog(context),
-      icon: const Icon(
-        Icons.save,
-        size: 20,
-        color: Colors.white,
-      ),
-      label: const Text(
-        "Dersi Güncelle",
-        style: TextStyle(color: Colors.white),
-      ),
+  Widget _buildAttendanceDropdown() {
+    final values = List.generate(21, (i) => i);
+    return DropdownButtonFormField<int>(
+      value: attendance,
+      items: values
+          .map((v) => DropdownMenuItem(value: v, child: Text(v.toString())))
+          .toList(),
+      onChanged: (v) => setState(() => attendance = v),
+    );
+  }
+
+  Widget _buildActionButton(
+      {required String text,
+      required Color color,
+      required VoidCallback onPressed}) {
+    return ElevatedButton(
       style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          backgroundColor: Colors.blue,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-    );
-  }
-
-  buildSaveAttendanceButton() {
-    return ElevatedButton.icon(
-      onPressed: () => showStateAttendanceUpdateDialog(context),
-      icon: const Icon(
-        Icons.save,
-        size: 20,
-        color: Colors.white,
+        backgroundColor: color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       ),
-      label: const Text(
-        "Devamsızlığı Güncelle",
-        style: TextStyle(color: Colors.white),
-      ),
-      style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          backgroundColor: Colors.blue,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+      onPressed: onPressed,
+      child: Text(text, style: const TextStyle(color: Colors.white)),
     );
   }
 
-  buildDeleteButton() {
-    return ElevatedButton.icon(
-      onPressed: () => showWarningDialog(context),
-      icon: const Icon(
-        Icons.delete,
-        size: 20,
-        color: Colors.white,
-      ),
-      label: const Text(
-        "Dersi Sil",
-        style: TextStyle(color: Colors.white),
-      ),
-      style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          backgroundColor: Colors.red,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-    );
-  }
-
-  void updateLessonAttendance() async {
-    List<Lesson>? updatedLessons;
-    if (txtName.text.isEmpty ||
-        txtClass.text.isEmpty ||
-        selectedDay == null ||
-        selectedHour1 == null ||
-        attendance == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
-      );
-      return;
-    }
-    methods.printColored("${widget.lesson.id} - ${widget.lesson.name}", "32");
-    await dbHelper.updateAttendance(
-      Lesson.withAttendance(
-          txtName.text,
-          txtClass.text,
-          selectedDay,
-          selectedHour1,
-          selectedHour2,
-          selectedHour3,
-          txtTeacher.text,
-          attendance),
-    );
-    var data = await dbHelper.getLessons();
-    if (!mounted) return;
-    setState(() {
-      updatedLessons = data;
-    });
-    methods.navigateToPage(
-        context,
-        LessonDetailScreen(
-            lesson: updatedLessons!
-                .firstWhere((lesson) => lesson.id == widget.lesson.id)));
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Colors.blueGrey[900],
-            title: const Text(
-              "Bilgilendirme",
-              style: TextStyle(color: Colors.amber),
-            ),
-            content: const Text("Ders başarıyla güncellendi.",
-                style: TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text(
-                  "Tamam",
-                  style: TextStyle(color: Colors.green),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          );
-        });
-    Navigator.pop(context, true);
-  }
-
-  void updateLesson() async {
-    List<Lesson>? updatedLessons;
-    if (txtName.text.isEmpty ||
-        txtClass.text.isEmpty ||
-        selectedDay == null ||
-        selectedHour1 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
-      );
-      return;
-    }
-    methods.printColored("${widget.lesson.id} - ${widget.lesson.name}", "32");
-    await dbHelper.update(
-      Lesson.withID(
-        widget.lesson.id,
-        txtName.text,
-        txtClass.text,
-        selectedDay,
-        selectedHour1,
-        selectedHour2,
-        selectedHour3,
-        txtTeacher.text,
-      ),
-    );
-    var data = await dbHelper.getLessons();
-    if (!mounted) return;
-    setState(() {
-      updatedLessons = data;
-    });
-    methods.navigateToPage(
-        context,
-        LessonDetailScreen(
-            lesson: updatedLessons!
-                .firstWhere((lesson) => lesson.id == widget.lesson.id)));
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Colors.blueGrey[900],
-            title: const Text(
-              "Bilgilendirme",
-              style: TextStyle(color: Colors.amber),
-            ),
-            content: const Text("Ders başarıyla güncellendi.",
-                style: TextStyle(color: Colors.white)),
-            actions: [
-              TextButton(
-                child: const Text(
-                  "Tamam",
-                  style: TextStyle(color: Colors.green),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          );
-        });
-    Navigator.pop(context, true);
-  }
-
-  void deleteLesson() async {
-    await dbHelper.delete(widget.lesson.id!);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Ders başarıyla silindi!")),
-    );
-    methods.navigateToPage(context, Timetabledetail());
-  }
-
-  void showWarningDialog(BuildContext context) {
+  void _showConfirmDialog(BuildContext context, bool isAttendanceUpdate) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
-          content: const Text("Bu dersi silmek istediğinize emin misiniz?",
-              style: TextStyle(color: Colors.white)),
-          actions: [
-            TextButton(
-              child:
-                  const Text("vazgeç", style: TextStyle(color: Colors.green)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-                onPressed: deleteLesson,
-                child: const Text("Sil", style: TextStyle(color: Colors.red)))
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          "Onay",
+          style:
+              TextStyle(color: isAttendanceUpdate ? Colors.green : Colors.blue),
+        ),
+        content: Text(
+          isAttendanceUpdate
+              ? "Devamsızlığı güncellemek istediğinize emin misiniz?"
+              : "Dersi güncellemek istediğinize emin misiniz?",
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Vazgeç", style: TextStyle(color: Colors.red)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              final updatedLesson = widget.lesson
+                  .copyWith(
+                    attendance: attendance,
+                    isProcessed: widget.lesson.isProcessed,
+                  )
+                  .copyWith(
+                    isProcessed: 0,
+                  );
+              final newEntity = LessonEntity(
+                id: widget.lesson.id,
+                name: txtName.text,
+                place: txtClass.text,
+                day: selectedDay ?? widget.lesson.day!,
+                hour1: selectedHour1,
+                hour2: selectedHour2,
+                hour3: selectedHour3,
+                teacher: txtTeacher.text,
+                attendance: attendance ?? widget.lesson.attendance,
+              );
+
+              context.read<LessonBloc>().add(
+                    isAttendanceUpdate
+                        ? UpdateAttendanceEvent(newEntity)
+                        : UpdateLessonEvent(newEntity),
+                  );
+            },
+            child:
+                const Text("Güncelle", style: TextStyle(color: Colors.green)),
+          ),
+        ],
+      ),
     );
   }
 
-  showStateUpdateDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
-          content: const Text("Dersi güncellemek istediğinize emin misiniz?",
-              style: TextStyle(color: Colors.white)),
-          actions: [
-            TextButton(
-              child: const Text("vazgeç", style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-                onPressed: updateLesson,
-                child: const Text("Güncelle",
-                    style: TextStyle(color: Colors.green)))
-          ],
-        );
-      },
-    );
-  }
-
-  showStateAttendanceUpdateDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
-          content: const Text(
-              "Devamsızlığı güncellemek istediğinize emin misiniz?",
-              style: TextStyle(color: Colors.white)),
-          actions: [
-            TextButton(
-              child: const Text("vazgeç", style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-                onPressed: updateLessonAttendance,
-                child: const Text("Güncelle",
-                    style: TextStyle(color: Colors.green)))
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text("Uyarı", style: TextStyle(color: Colors.red)),
+        content: const Text("Bu dersi silmek istediğinize emin misiniz?",
+            style: TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Vazgeç", style: TextStyle(color: Colors.green)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context
+                  .read<LessonBloc>()
+                  .add(DeleteLessonEvent(widget.lesson.id!));
+            },
+            child: const Text("Sil", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }

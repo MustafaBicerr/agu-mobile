@@ -9,7 +9,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:home_page/core/constants/constants.dart';
 import 'package:home_page/core/notification/notification_screen.dart';
 import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
 import 'package:home_page/featuers/course/data/data_sources/events_service.dart';
 import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/featuers/course/presentation/pages/attendance.dart';
@@ -18,21 +17,15 @@ import 'package:home_page/featuers/course/presentation/pages/lesson_detail_scree
 import 'package:home_page/featuers/events/data/models/Store.dart';
 import 'package:home_page/featuers/home/presentation/pages/main_page.dart';
 import 'package:home_page/featuers/refectory/data/data_sources/refectory_data_source.dart';
-
 import 'package:home_page/methods.dart';
-
 import 'package:home_page/starting.dart';
-import 'package:home_page/featuers/course/presentation/bloc/lesson_cubit.dart';
 import 'package:home_page/featuers/auth/presentation/bloc/user_cubit.dart';
-
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:sqflite/sqflite.dart';
 import 'firebase_options.dart';
-
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -164,7 +157,6 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: MultiBlocProvider(providers: [
         BlocProvider<LessonCubit>(
-          
           create: (context) => LessonCubit(dbHelper, notificationService),
         ),
         BlocProvider<UserCubit>(

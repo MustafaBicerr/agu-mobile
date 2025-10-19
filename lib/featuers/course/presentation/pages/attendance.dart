@@ -1,235 +1,143 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
-import 'package:home_page/featuers/course/data/models/lesson.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_page/featuers/course/domain/entities/lessonEntity.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_bloc.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_event.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_state.dart';
 import 'package:home_page/featuers/home/presentation/widgets/bottom.dart';
-import 'package:sqflite/sqflite.dart';
 
 class DailyAttendanceScreen extends StatefulWidget {
+  const DailyAttendanceScreen({super.key});
+
   @override
-  DailyAttendanceScreenState createState() => DailyAttendanceScreenState();
+  State<DailyAttendanceScreen> createState() => _DailyAttendanceScreenState();
 }
 
-class DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
-  final dbHelper = Dbhelper();
-  List<Lesson> dailyLessons = [];
-  String currentDay = "";
-
-  void resetWeeklyAttendance() async {
-    DateTime now = DateTime.now();
-    if (now.weekday == DateTime.sunday) {
-      // Eğer bugün Pazartesi ise
-      Database db = await dbHelper.db;
-      await db.rawUpdate("UPDATE lessons SET isProcessed = 0");
-    }
-  }
+class _DailyAttendanceScreenState extends State<DailyAttendanceScreen> {
+  late String currentDay;
 
   @override
   void initState() {
     super.initState();
-    resetWeeklyAttendance(); // Haftalık sıfırlamayı kontrol et
-    getDailyLessons(); // Günlük dersleri yükle
+    currentDay = _getDayName();
+    context.read<LessonBloc>().add(GetDailyLessonsEvent(currentDay));
   }
 
-  // Günlük dersleri getir
-  void getDailyLessons() async {
-    String today = methods.getDayName();
-    var allLessons = await dbHelper.getLessons();
-    setState(() {
-      currentDay = today;
-      dailyLessons = allLessons
-          .where((lesson) => lesson.day == today && lesson.isProcessed == 0)
-          .toList();
-    });
-  }
-
-  // Attendance güncelle ve dersi listeden kaldır
-  void handleAttendance(Lesson lesson, bool attended) async {
-    lesson.isProcessed = 1;
-    int hourCount = 1;
-
-    if (!attended) {
-      // Saat sayısını belirle
-      hourCount = 1;
-      if (lesson.hour2 != null && lesson.hour2!.isNotEmpty) hourCount++;
-      if (lesson.hour3 != null && lesson.hour3!.isNotEmpty) hourCount++;
-
-      await dbHelper.incrementAttendanceByCount(lesson.name!, hourCount);
-
-      int updatedAttendance =
-          await dbHelper.getAttendanceByLessonName(lesson.name!);
-      lesson.attendance = updatedAttendance;
-    }
-
-    await dbHelper.update(lesson);
-
-    setState(() {
-      dailyLessons.remove(lesson);
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          attended
-              ? "✅ ${lesson.name!.toUpperCase()} dersine katıldınız."
-              : "❌ ${lesson.name!.toUpperCase()} dersine katılmadınız. Devamsızlık +$hourCount",
-        ),
-      ),
-    );
+  String _getDayName() {
+    final days = [
+      "Pazartesi",
+      "Salı",
+      "Çarşamba",
+      "Perşembe",
+      "Cuma",
+      "Cumartesi",
+      "Pazar"
+    ];
+    return days[DateTime.now().weekday - 1];
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      bottomNavigationBar: bottomBar2(context, 4), // Alt gezinme çubuğu
-
+      bottomNavigationBar: bottomBar2(context, 4),
       appBar: AppBar(
-        leadingWidth: 0,
-        leading: Container(),
         title: Text(
-          "Günlük Devamsızlık Kontrolü",
-          style: TextStyle(fontSize: screenWidth * 0.06),
+          "Günlük Devamsızlık ($currentDay)",
+          style: const TextStyle(fontSize: 20),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [
-          Color.fromARGB(255, 255, 255, 255),
-          Color.fromARGB(255, 39, 113, 148),
-          Color.fromARGB(255, 255, 255, 255),
-        ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-        child: dailyLessons.isEmpty
-            ? Center(
+      body: BlocConsumer<LessonBloc, LessonState>(
+        listener: (context, state) {
+          if (state is LessonActionSuccess) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
+          } else if (state is LessonError) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          if (state is LessonLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is DailyLessonsLoaded) {
+            if (state.lessons.isEmpty) {
+              return Center(
                 child: Text(
-                  "Bugün ($currentDay) için ders bulunamadı.",
-                  style: const TextStyle(
-                      fontSize: 18, color: Color.fromARGB(255, 255, 255, 255)),
+                  "Bugün (${state.day}) için ders bulunamadı.",
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(12.0),
-                itemCount: dailyLessons.length,
-                itemBuilder: (context, index) {
-                  final lesson = dailyLessons[index];
-                  return buildLessonCard(lesson);
-                },
-              ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: state.lessons.length,
+              itemBuilder: (context, index) {
+                final lesson = state.lessons[index];
+                return _buildLessonCard(context, lesson);
+              },
+            );
+          } else {
+            return const Center(child: Text("Veri yükleniyor..."));
+          }
+        },
       ),
     );
   }
 
-  Widget buildLessonCard(Lesson lesson) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6.0,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
+  Widget _buildLessonCard(BuildContext context, LessonEntity lesson) {
+    return Card(
+      color: Colors.white,
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.book, color: Colors.blueAccent, size: 24),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    lesson.name!.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                CircleAvatar(
-                  backgroundColor: Colors.blueAccent,
-                  child: Text(
-                    lesson.hour1?.substring(0, 5) ?? "",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              lesson.name!.toUpperCase(),
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             const SizedBox(height: 8),
+            Text("Sınıf: ${lesson.place ?? '-'}",
+                style: const TextStyle(color: Colors.black54)),
+            Text("Öğretmen: ${lesson.teacher ?? '-'}",
+                style: const TextStyle(color: Colors.black54)),
             Text(
-              "Saatler: ${lesson.hour1 ?? ""} / ${lesson.hour2 ?? ""} / ${lesson.hour3 ?? ""}",
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Öğretmen: ${lesson.teacher ?? "Öğretmen bilgisi yok"}",
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(
-              height: 4,
-            ),
-            Text(
-              "Sınıf: ${lesson.place ?? "Sınıf bilgisi yok"}",
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-              ),
+              "Saatler: ${lesson.hour1 ?? ''} / ${lesson.hour2 ?? ''} / ${lesson.hour3 ?? ''}",
+              style: const TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
                   onPressed: () {
-                    handleAttendance(lesson, true);
+                    context
+                        .read<LessonBloc>()
+                        .add(MarkAttendanceEvent(lesson, true));
                   },
-                  icon: const Icon(Icons.check, size: 18, color: Colors.white),
-                  label: const Text(
-                    "Katıldım",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                  ),
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  label: const Text("Katıldım"),
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    handleAttendance(lesson, false);
+                    context
+                        .read<LessonBloc>()
+                        .add(MarkAttendanceEvent(lesson, false));
                   },
-                  icon: const Icon(Icons.close, size: 18, color: Colors.white),
-                  label: const Text(
-                    "Katılmadım",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                  ),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  label: const Text("Katılmadım"),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 ),
               ],
             ),

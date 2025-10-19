@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
 import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/featuers/course/presentation/pages/lesson_detail_screen.dart';
-
-
 
 class Methods {
   final dbHelper = Dbhelper();

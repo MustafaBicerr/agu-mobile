@@ -1,379 +1,167 @@
 import 'package:flutter/material.dart';
-import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
-import 'package:home_page/featuers/course/data/models/lesson.dart';
-import 'package:home_page/featuers/course/presentation/pages/TimeTableDetail.dart' hide methods;
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_page/featuers/course/domain/entities/lessonEntity.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_bloc.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_event.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_state.dart';
 
 class LessonAddPage extends StatefulWidget {
+  const LessonAddPage({super.key});
+
   @override
-  State<LessonAddPage> createState() => _LessonAdd();
+  State<LessonAddPage> createState() => _LessonAddPageState();
 }
 
-class _LessonAdd extends State<LessonAddPage> {
-  String? selectedHour1;
-  String? selectedHour2;
-  String? selectedHour3;
-  String? selectedDay;
-  var dbHelper = Dbhelper();
+class _LessonAddPageState extends State<LessonAddPage> {
+  final nameController = TextEditingController();
+  final classController = TextEditingController();
+  final teacherController = TextEditingController();
 
-  TextEditingController txtName = TextEditingController();
-  TextEditingController txtClass = TextEditingController();
-  TextEditingController txtTeacher = TextEditingController();
+  String? selectedDay;
+  String? hour1;
+  String? hour2;
+  String? hour3;
+
+  final List<String> days = [
+    "Pazartesi",
+    "Salı",
+    "Çarşamba",
+    "Perşembe",
+    "Cuma",
+    "Cumartesi",
+    "Pazar"
+  ];
+
+  final List<String> hours = [
+    "08:00-08:45",
+    "09:00-09:45",
+    "10:00-10:45",
+    "11:00-11:45",
+    "12:00-12:45",
+    "13:00-13:45",
+    "14:00-14:45",
+    "15:00-15:45",
+    "16:00-16:45",
+    "17:00-17:45",
+    "18:00-18:45",
+    "19:00-19:45"
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Ders Ekleme"),
-        backgroundColor: Colors.white,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          // height: double.infinity,
-          decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [
-            Color.fromARGB(255, 255, 255, 255),
-            Color.fromARGB(255, 39, 113, 148),
-            Color.fromARGB(255, 255, 255, 255),
-          ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text("Ders Ekle")),
+      body: BlocConsumer<LessonBloc, LessonState>(
+        listener: (context, state) {
+          if (state is LessonActionSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+            Navigator.pop(context);
+          } else if (state is LessonError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is LessonLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    // color: Colors.white70,
-                    decoration: BoxDecoration(
-                      color: Colors.white70,
-                      borderRadius: BorderRadius.circular(12.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            "Ders Bilgileri",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                        ),
-                        buildNameField(),
-                        buildClassField(),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildTextField(nameController, "Ders Adı", Icons.book),
+                const SizedBox(height: 10),
+                _buildTextField(classController, "Sınıf", Icons.place),
+                const SizedBox(height: 10),
+                _buildTextField(teacherController, "Öğretmen", Icons.person),
                 const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white70,
-                      borderRadius: BorderRadius.circular(12.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: const Text(
-                            "Öğretmen Bilgileri",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                        ),
-                        buildTeacherField(),
-                      ],
+                _buildDropdown("Gün Seç", days, selectedDay, (value) {
+                  setState(() => selectedDay = value);
+                }),
+                const SizedBox(height: 10),
+                _buildDropdown("Birinci Ders Saati", hours, hour1,
+                    (value) => setState(() => hour1 = value)),
+                _buildDropdown("İkinci Ders Saati", hours, hour2,
+                    (value) => setState(() => hour2 = value)),
+                _buildDropdown("Üçüncü Ders Saati", hours, hour3,
+                    (value) => setState(() => hour3 = value)),
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  onPressed: () => _onSave(context),
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text(
+                    "Kaydet",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white70,
-                      borderRadius: BorderRadius.circular(12.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: const Text(
-                            "Ders Günü ve Saatleri",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        buildDayField(),
-                        buildHour1Field(),
-                        buildHour2Field(),
-                        buildHour3Field()
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    buildSaveButton(),
-                  ],
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildNameField() {
-    return Padding(
-      padding:
-          const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 8.0),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: "Ders Adı",
-          labelStyle: const TextStyle(color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          prefixIcon: const Icon(Icons.book),
-        ),
-        controller: txtName,
-      ),
-    );
-  }
-
-  Widget buildClassField() {
-    return Padding(
-      padding: const EdgeInsets.only(
-          left: 16.0, right: 16.0, bottom: 16.0, top: 8.0),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: "Sınıf",
-          labelStyle: const TextStyle(color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          prefixIcon: const Icon(Icons.place),
-        ),
-        controller: txtClass,
-      ),
-    );
-  }
-
-  Widget buildTeacherField() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: "Öğretmen Adı",
-          labelStyle: const TextStyle(color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          prefixIcon: const Icon(Icons.person),
-        ),
-        controller: txtTeacher,
-      ),
-    );
-  }
-
-  Widget buildDayField() {
-    final List<String> days = [
-      "Pazartesi",
-      "Salı",
-      "Çarşamba",
-      "Perşembe",
-      "Cuma",
-      "Cumartesi",
-      "Pazar"
-    ];
-
-    return Padding(
-      padding:
-          const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 8.0),
-      child: DropdownButtonFormField<String>(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        value: selectedDay,
-        decoration: InputDecoration(
-          labelText: "Gün Seç",
-          labelStyle: const TextStyle(color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          prefixIcon: const Icon(Icons.calendar_today),
-        ),
-        items: days
-            .map((day) => DropdownMenuItem(
-                  value: day,
-                  child: Text(day),
-                ))
-            .toList(),
-        onChanged: (value) {
-          setState(() {
-            selectedDay = value;
-          });
+          );
         },
       ),
     );
   }
 
-  Widget buildHourField(
-      String label, String? selectedHour, void Function(String?) onChanged) {
-    final List<String> hours = [
-      "08:00-08:45",
-      "09:00-09:45",
-      "10:00-10:45",
-      "11:00-11:45",
-      "12:00-12:45",
-      "13:00-13:45",
-      "14:00-14:45",
-      "15:00-15:45",
-      "16:00-16:45",
-      "17:00-17:45",
-      "18:00-18:45",
-      "19:00-19:45",
-    ];
-
-    return Padding(
-      padding:
-          const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0, top: 8.0),
-      child: DropdownButtonFormField<String>(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        value: selectedHour,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          prefixIcon: const Icon(Icons.access_time),
-        ),
-        items: hours
-            .map((hour) => DropdownMenuItem(
-                  value: hour,
-                  child: Text(hour),
-                ))
-            .toList(),
-        onChanged: onChanged,
+  Widget _buildTextField(
+      TextEditingController controller, String label, IconData icon) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        prefixIcon: Icon(icon),
       ),
     );
   }
 
-  Widget buildHour1Field() {
-    return buildHourField("İlk Ders Saatinizi Giriniz", selectedHour1, (value) {
-      setState(() {
-        selectedHour1 = value;
-      });
-    });
-  }
-
-  Widget buildHour2Field() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: buildHourField("İkinci Ders Saatinizi Giriniz", selectedHour2,
-          (value) {
-        setState(() {
-          selectedHour2 = value;
-        });
-      }),
-    );
-  }
-
-  Widget buildHour3Field() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: buildHourField("Üçüncü Ders Saatinizi Giriniz", selectedHour3,
-          (value) {
-        setState(() {
-          selectedHour3 = value;
-        });
-      }),
-    );
-  }
-
-  Widget buildSaveButton() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton.icon(
-          onPressed: addLesson,
-          icon: const Icon(
-            Icons.save,
-            size: 24,
-            color: Colors.white,
-          ),
-          label: const Text("KAYDET",
-              style: TextStyle(fontSize: 18, color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            // padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-        ),
+  Widget _buildDropdown(String label, List<String> items, String? value,
+      ValueChanged<String?> onChanged) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
+      onChanged: onChanged,
     );
   }
 
-  void addLesson() async {
-    if (txtName.text.isEmpty ||
-        txtClass.text.isEmpty ||
+  void _onSave(BuildContext context) {
+    if (nameController.text.isEmpty ||
+        classController.text.isEmpty ||
+        teacherController.text.isEmpty ||
         selectedDay == null ||
-        selectedHour1 == null) {
+        hour1 == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lütfen tüm alanları doldurun!")),
+        const SnackBar(content: Text("Lütfen tüm zorunlu alanları doldurun")),
       );
       return;
     }
 
-    await dbHelper.insert(
-      Lesson(txtName.text, txtClass.text, selectedDay, selectedHour1,
-          selectedHour2, selectedHour3, txtTeacher.text),
+    final lesson = LessonEntity(
+      name: nameController.text,
+      place: classController.text,
+      day: selectedDay!,
+      hour1: hour1,
+      hour2: hour2,
+      hour3: hour3,
+      teacher: teacherController.text,
     );
-    // Navigator.pop(
-    //     context, true); // Ders başarıyla eklendiğinde önceki sayfaya dön
-    methods.navigateToPage(context, Timetabledetail());
+
+    context.read<LessonBloc>().add(AddLessonEvent(lesson));
   }
 }
