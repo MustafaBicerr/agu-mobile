@@ -1,29 +1,24 @@
+
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_page/core/notification/notification_service.dart';
 import 'package:home_page/featuers/auth/domain/usecases/user_image_picker.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/auth/auth_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/auth/auth_state.dart';
 import 'package:home_page/main.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-final _firebase = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
   @override
-  State<AuthScreen> createState() {
-    return _AuthScreenState();
-  }
+  State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
   final _form = GlobalKey<FormState>();
 
-  var _isLogin = true;
+  // local form fields (UI kontrolü)
   var _enteredEmail = '';
   var _enteredPassword = '';
   var _enteredUsername = '';
@@ -31,461 +26,313 @@ class _AuthScreenState extends State<AuthScreen> {
   var _enteredSurname = '';
   var _enteredStudentID = '';
   File? _selectedImage;
-  var _isAuthenticating = false;
-  bool _rememberMe = false;
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
   final TextEditingController _passwordController = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
-
-  void _pickImage() async {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.camera_alt),
-            title: const Text('Kamerayı Aç'),
-            onTap: () async {
-              Navigator.of(ctx).pop();
-              final pickedImage =
-                  await _picker.pickImage(source: ImageSource.camera);
-              if (pickedImage != null) {
-                setState(() {
-                  _selectedImage = File(pickedImage.path);
-                });
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: const Text('Galeriden Seç'),
-            onTap: () async {
-              Navigator.of(ctx).pop();
-              final pickedImage =
-                  await _picker.pickImage(source: ImageSource.gallery);
-              if (pickedImage != null) {
-                setState(() {
-                  _selectedImage = File(pickedImage.path);
-                });
-              }
-            },
-          ),
-        ],
+  Future<void> _goHome() async {
+    // Navigation after success
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => MyApp(notificationService: NotificationService()),
       ),
     );
   }
 
-  void _submit() async {
+  void _submit(AuthState state, AuthCubit cubit) async {
     final isValid = _form.currentState!.validate();
-    if (!isValid) {
-      return;
-    }
-
+    if (!isValid) return;
     _form.currentState!.save();
 
-    try {
-      setState(() {
-        _isAuthenticating = true;
-      });
-
-      if (_isLogin) {
-        await _firebase.signInWithEmailAndPassword(
-          email: _enteredEmail,
-          password: _enteredPassword,
-        );
-      } else {
-        final userCredential = await _firebase.createUserWithEmailAndPassword(
-          email: _enteredEmail,
-          password: _enteredPassword,
-        );
-
-        // Kullanıcı sayısını belirleme
-        final usersCollection = FirebaseFirestore.instance.collection('users');
-        final userCountSnapshot = await usersCollection.get();
-        final userCount = userCountSnapshot.size + 1;
-
-        // Yeni kullanıcı dosya adını oluşturma
-        String formattedUsername = _enteredUsername.replaceAll(' ', '_');
-        String documentId =
-            '${formattedUsername}_$userCount'; // Firestore doc ID
-        String fileName = '$documentId.jpg'; // Fotoğraf dosya adı
-
-        String? imageUrl;
-        if (_selectedImage != null) {
-          final storageRef = FirebaseStorage.instance
-              .ref()
-              .child('user_images')
-              .child(fileName);
-
-          await storageRef.putFile(_selectedImage!);
-          imageUrl = await storageRef.getDownloadURL();
-        }
-
-        // Kullanıcı belgesini oluştururken doc ID'yi belirliyoruz
-        await usersCollection.doc(documentId).set({
-          'Name': _enteredName,
-          'Surname': _enteredSurname,
-          'username': _enteredUsername + '_$userCount',
-          'email': _enteredEmail,
-          'former_image_urls': [],
-          'image_url': imageUrl ?? '',
-          'student_id': _enteredStudentID
-        });
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('remember_me', _rememberMe);
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              MyApp(notificationService: NotificationService()),
-        ),
+    if (state.isLogin) {
+      await cubit.signIn(
+        email: _enteredEmail,
+        password: _enteredPassword,
+        onSuccess: _goHome,
       );
-    } on FirebaseAuthException catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message ?? 'Authentication failed.')),
+    } else {
+      await cubit.signUp(
+        email: _enteredEmail,
+        password: _enteredPassword,
+        name: _enteredName,
+        surname: _enteredSurname,
+        usernameBase: _enteredUsername, // name + surname’den build ediyordun
+        studentId: _enteredStudentID,
+        pickedImage: _selectedImage,
+        onSuccess: _goHome,
       );
-    } finally {
-      setState(() {
-        _isAuthenticating = false;
-      });
-    }
-  }
-
-  void _loadRememberMe() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _rememberMe = prefs.getBool('remember_me') ?? false;
-    });
-  }
-
-  void _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rememberMe = prefs.getBool('remember_me') ?? false;
-
-    if (rememberMe) {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) =>
-                MyApp(notificationService: NotificationService()),
-          ),
-        );
-      }
     }
   }
 
   @override
   void initState() {
     super.initState();
-    // _loadUserCredentials();
-    // fetchWeather();
-    _checkLoginStatus();
-    _loadRememberMe();
+    // remember me + auto login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthCubit>().loadRememberAndAutoLogin(onAutoLogin: _goHome);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      //backgroundColor: Theme.of(context).colorScheme.primary,
       resizeToAvoidBottomInset: true,
       body: Center(
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                height: 65,
-              ),
-              Container(
-                margin: const EdgeInsets.only(
-                    // top: 30,
-                    // bottom: 20,
-                    // left: 20,
-                    // right: 20,
+          child: BlocConsumer<AuthCubit, AuthState>(
+            listener: (context, state) {
+              if (state.errorMessage != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.errorMessage!)),
+                );
+              }
+            },
+            builder: (context, state) {
+              final cubit = context.read<AuthCubit>();
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 65),
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    child: Image.asset('assets/images/agu_kilit_ekrani.jpg'),
+                  ),
+                  Container(
+                    height: MediaQuery.of(context).size.height * 1,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 254, 254, 254),
+                          Color.fromARGB(255, 204, 28, 28),
+                        ],
+                        stops: [0.01, 0.8],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
-                //width: 700,
-                width: MediaQuery.of(context).size.width * 0.6, // Ekranın %80'i
-                child: Image.asset(
-                  'assets/images/agu_kilit_ekrani.jpg',
-                ),
-              ),
-              Container(
-                height: MediaQuery.of(context).size.height * 1, // Ekranın %80'i
-                decoration: const BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                  Color.fromARGB(255, 254, 254, 254), //rgba(254,254,254,255)
-                  Color.fromARGB(255, 204, 28, 28),
-                  //Colors.white,
-                ], stops: [
-                  0.01,
-                  0.8,
-                  //1
-                ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                      top: 10), // Card'ın üstüne 180 piksel boşluk
-                  child: Card(
-                    elevation: 0,
-                    color: const Color.fromARGB(0, 255, 255,
-                        255), // Card'ın arka plan rengini şeffaf yap
-                    margin: const EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Form(
-                          key: _form,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!_isLogin)
-                                UserImagePicker(
-                                  onPickImage: (pickedImage) {
-                                    setState(() {
-                                      _selectedImage = pickedImage;
-                                    });
-                                  },
-                                ),
-                              if (!_isLogin)
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        style: const TextStyle(
-                                            color: Colors.black),
-                                        decoration: const InputDecoration(
-                                          labelText: 'İsim',
-                                          labelStyle:
-                                              TextStyle(color: Colors.black),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Card(
+                        elevation: 0,
+                        color: const Color.fromARGB(0, 255, 255, 255),
+                        margin: const EdgeInsets.all(20),
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Form(
+                              key: _form,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (!state.isLogin)
+                                    UserImagePicker(
+                                      onPickImage: (pickedImage) {
+                                        setState(() {
+                                          _selectedImage = pickedImage;
+                                        });
+                                      },
+                                    ),
+                                  if (!state.isLogin)
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            style: const TextStyle(color: Colors.black),
+                                            decoration: const InputDecoration(
+                                              labelText: 'İsim',
+                                              labelStyle: TextStyle(color: Colors.black),
+                                            ),
+                                            enableSuggestions: false,
+                                            validator: (value) {
+                                              if (value == null || value.isEmpty || value.trim().length < 3) {
+                                                return 'Lütfen geçerli bir isim girin';
+                                              }
+                                              return null;
+                                            },
+                                            onSaved: (value) {
+                                              _enteredName = value!;
+                                              _enteredUsername = value!;
+                                            },
+                                          ),
                                         ),
-                                        enableSuggestions: false,
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty ||
-                                              value.trim().length < 3) {
-                                            return 'Lütfen geçerli bir isim girin';
-                                          }
-                                          return null;
-                                        },
-                                        onSaved: (value) {
-                                          _enteredName = value!;
-                                          _enteredUsername = value!;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(
-                                        width:
-                                            10), // İki alan arasında boşluk bırakır
-                                    Expanded(
-                                      child: TextFormField(
-                                        style: const TextStyle(
-                                            color: Colors.black),
-                                        decoration: const InputDecoration(
-                                          labelText: 'Soyisim',
-                                          labelStyle:
-                                              TextStyle(color: Colors.black),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: TextFormField(
+                                            style: const TextStyle(color: Colors.black),
+                                            decoration: const InputDecoration(
+                                              labelText: 'Soyisim',
+                                              labelStyle: TextStyle(color: Colors.black),
+                                            ),
+                                            enableSuggestions: false,
+                                            validator: (value) {
+                                              if (value == null || value.isEmpty || value.trim().length < 3) {
+                                                return 'Lütfen geçerli bir soyisim girin';
+                                              }
+                                              return null;
+                                            },
+                                            onSaved: (value) {
+                                              _enteredSurname = value!;
+                                              _enteredUsername = '$_enteredUsername.${value!}';
+                                            },
+                                          ),
                                         ),
-                                        enableSuggestions: false,
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.isEmpty ||
-                                              value.trim().length < 3) {
-                                            return 'Lütfen geçerli bir soyisim girin';
-                                          }
-                                          return null;
-                                        },
-                                        onSaved: (value) {
-                                          _enteredSurname = value!;
-                                          _enteredUsername =
-                                              '$_enteredUsername.${value!}';
-                                        },
+                                      ],
+                                    ),
+                                  if (!state.isLogin)
+                                    TextFormField(
+                                      style: const TextStyle(color: Colors.black),
+                                      decoration: const InputDecoration(
+                                        labelText: 'Öğrenci Numarası',
+                                        labelStyle: TextStyle(color: Colors.black),
                                       ),
+                                      enableSuggestions: false,
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.isEmpty ||
+                                            value.trim().length != 10 ||
+                                            value.contains('qwertyuıopğüasdfghjklşizxcvbnmöç,.<>|"!#+%&/()?_-}][{}]')) {
+                                          return 'Lütfen geçerli bir numara girin';
+                                        }
+                                        return null;
+                                      },
+                                      onSaved: (value) {
+                                        _enteredStudentID = value!;
+                                      },
                                     ),
-                                  ],
-                                ),
-                              if (!_isLogin)
-                                TextFormField(
-                                  style: const TextStyle(color: Colors.black),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Öğrenci Numarası',
-                                    labelStyle: TextStyle(color: Colors.black),
-                                  ),
-                                  enableSuggestions: false,
-                                  validator: (value) {
-                                    if (value == null ||
-                                        value.isEmpty ||
-                                        value.trim().length != 10 ||
-                                        value.contains(
-                                            'qwertyuıopğüasdfghjklşizxcvbnmöç,.<>|"!#+%&/()?_-}][{}]')) {
-                                      return 'Lütfen geçerli bir numara girin';
-                                    }
-                                    return null;
-                                  },
-                                  onSaved: (value) {
-                                    _enteredStudentID = value!;
-                                  },
-                                ),
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Email Adresi',
-                                  labelStyle: TextStyle(color: Colors.black),
-                                ),
-                                style: const TextStyle(color: Colors.black),
-                                keyboardType: TextInputType.emailAddress,
-                                autocorrect: false,
-                                textCapitalization: TextCapitalization.none,
-                                validator: (value) {
-                                  if (value == null ||
-                                      value.trim().isEmpty ||
-                                      !value.contains('@')) {
-                                    return 'Lütfen geçerli bir Email hesabı girin.';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _enteredEmail = value!;
-                                },
-                              ),
-                              TextFormField(
-                                controller:
-                                    _passwordController, // Şifreyi kontrol eden controller
-                                style: const TextStyle(color: Colors.black),
-                                decoration: InputDecoration(
-                                  labelText: 'Şifre',
-                                  labelStyle:
-                                      const TextStyle(color: Colors.black),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _isPasswordVisible
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
-                                      color: Colors.black,
+                                  TextFormField(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Email Adresi',
+                                      labelStyle: TextStyle(color: Colors.black),
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isPasswordVisible =
-                                            !_isPasswordVisible;
-                                      });
+                                    style: const TextStyle(color: Colors.black),
+                                    keyboardType: TextInputType.emailAddress,
+                                    autocorrect: false,
+                                    textCapitalization: TextCapitalization.none,
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                                        return 'Lütfen geçerli bir Email hesabı girin.';
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _enteredEmail = value!;
                                     },
                                   ),
-                                ),
-                                obscureText:
-                                    !_isPasswordVisible, // Şifreyi gizleyip/göstermek için
-                                validator: (value) {
-                                  if (value == null ||
-                                      value.trim().length < 6) {
-                                    return 'Şifre en az 6 karakterden oluşmalıdır!';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _enteredPassword = value!;
-                                },
-                              ),
-                              if (!_isLogin)
-                                TextFormField(
-                                  style: const TextStyle(color: Colors.black),
-                                  decoration: InputDecoration(
-                                    labelText: 'Şifrenizi onaylayın',
-                                    labelStyle:
-                                        const TextStyle(color: Colors.black),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        _isConfirmPasswordVisible
-                                            ? Icons.visibility
-                                            : Icons.visibility_off,
-                                        color: Colors.black,
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    style: const TextStyle(color: Colors.black),
+                                    decoration: InputDecoration(
+                                      labelText: 'Şifre',
+                                      labelStyle: const TextStyle(color: Colors.black),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                          color: Colors.black,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isPasswordVisible = !_isPasswordVisible;
+                                          });
+                                        },
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _isConfirmPasswordVisible =
-                                              !_isConfirmPasswordVisible;
-                                        });
-                                      },
                                     ),
+                                    obscureText: !_isPasswordVisible,
+                                    validator: (value) {
+                                      if (value == null || value.trim().length < 6) {
+                                        return 'Şifre en az 6 karakterden oluşmalıdır!';
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _enteredPassword = value!;
+                                    },
                                   ),
-                                  obscureText:
-                                      !_isConfirmPasswordVisible, // Şifreyi gizleyip/göstermek için
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Şifrenizi tekrar girin!';
-                                    }
-                                    if (value != _passwordController.text) {
-                                      return 'Girdiğiniz şifreler eşleşmiyor, lütfen tekrar deneyin.';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              const SizedBox(height: 12),
-                              if (_isAuthenticating)
-                                const CircularProgressIndicator(),
-                              if (!_isAuthenticating)
-                                Row(
-                                  children: [
-                                    const SizedBox(width: 35),
-                                    Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: (newValue) async {
-                                        setState(() {
-                                          _rememberMe = newValue!;
-                                        });
-                                        final prefs = await SharedPreferences
-                                            .getInstance();
-                                        await prefs.setBool('remember_me',
-                                            _rememberMe); // Değeri hemen kaydet
+                                  if (!state.isLogin)
+                                    TextFormField(
+                                      style: const TextStyle(color: Colors.black),
+                                      decoration: InputDecoration(
+                                        labelText: 'Şifrenizi onaylayın',
+                                        labelStyle: const TextStyle(color: Colors.black),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                            color: Colors.black,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      obscureText: !_isConfirmPasswordVisible,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Şifrenizi tekrar girin!';
+                                        }
+                                        if (value != _passwordController.text) {
+                                          return 'Girdiğiniz şifreler eşleşmiyor, lütfen tekrar deneyin.';
+                                        }
+                                        return null;
                                       },
                                     ),
-                                    const Text(
-                                      'Beni Hatırla',
-                                      style: TextStyle(color: Colors.black),
+                                  const SizedBox(height: 12),
+
+                                  if (state.isLoading)
+                                    const CircularProgressIndicator(),
+
+                                  if (!state.isLoading)
+                                    Row(
+                                      children: [
+                                        const SizedBox(width: 35),
+                                        Checkbox(
+                                          value: state.rememberMe,
+                                          onChanged: (v) {
+                                            if (v != null) {
+                                              context.read<AuthCubit>().setRememberMe(v);
+                                            }
+                                          },
+                                        ),
+                                        const Text('Beni Hatırla', style: TextStyle(color: Colors.black)),
+                                        const SizedBox(width: 45),
+                                        ElevatedButton(
+                                          onPressed: () => _submit(state, cubit),
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                                          child: Text(
+                                            state.isLogin ? 'Giriş yap' : 'Kayıt ol',
+                                            style: const TextStyle(color: Colors.black),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 45),
-                                    ElevatedButton(
-                                      onPressed: _submit,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                      ),
+
+                                  if (!state.isLoading)
+                                    TextButton(
+                                      onPressed: () => cubit.toggleMode(),
                                       child: Text(
-                                        _isLogin ? 'Giriş yap' : 'Kayıt ol',
+                                        state.isLogin ? 'Yeni hesap oluştur' : 'Zaten bir hesabım var',
                                         style: const TextStyle(
-                                            color: Colors.black),
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              if (!_isAuthenticating)
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _isLogin = !_isLogin;
-                                    });
-                                  },
-                                  child: Text(
-                                    _isLogin
-                                        ? 'Yeni hesap oluştur'
-                                        : 'Zaten bir hesabım var',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),

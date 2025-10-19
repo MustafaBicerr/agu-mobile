@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_page/core/constants/image_constants.dart';
 import 'package:home_page/core/notification/notification_service.dart';
-import 'package:home_page/featuers/auth/presentation/widgets/profileMenuWidget.dart';
+import 'package:home_page/featuers/auth/presentation/widgets/show_profile_menu_widget.dart';
 import 'package:home_page/featuers/course/data/data_sources/dbHelper.dart';
 import 'package:home_page/featuers/course/data/models/lesson.dart';
 import 'package:home_page/featuers/course/domain/usecases/upcomingLesson.dart';
@@ -14,8 +14,8 @@ import 'package:home_page/featuers/refectory/presentation/pages/refectory.dart';
 import 'package:home_page/featuers/web_access/presentation/widgets/buttons.dart';
 import 'package:home_page/methods.dart';
 import 'package:home_page/featuers/course/presentation/bloc/lesson_cubit.dart';
-import 'package:home_page/featuers/auth/presentation/bloc/user_cubit.dart';
-import 'package:home_page/featuers/auth/presentation/bloc/user_state.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user/user_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user/user_state.dart';
 
 
 
