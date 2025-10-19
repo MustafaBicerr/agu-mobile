@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:home_page/state/user_state.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user_state.dart';
 import 'package:image_picker/image_picker.dart';
 
 class UserCubit extends Cubit<UserState> {

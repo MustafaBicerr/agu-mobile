@@ -22,8 +22,8 @@ import 'package:home_page/featuers/refectory/data/data_sources/refectory_data_so
 import 'package:home_page/methods.dart';
 
 import 'package:home_page/starting.dart';
-import 'package:home_page/state/lesson_cubit.dart';
-import 'package:home_page/state/user_cubit.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user_cubit.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';

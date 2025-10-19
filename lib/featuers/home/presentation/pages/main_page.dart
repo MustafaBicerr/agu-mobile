@@ -13,9 +13,9 @@ import 'package:home_page/featuers/menu/presentation/widgets/menu_page.dart';
 import 'package:home_page/featuers/refectory/presentation/pages/refectory.dart';
 import 'package:home_page/featuers/web_access/presentation/widgets/buttons.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/state/lesson_cubit.dart';
-import 'package:home_page/state/user_cubit.dart';
-import 'package:home_page/state/user_state.dart';
+import 'package:home_page/featuers/course/presentation/bloc/lesson_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user_cubit.dart';
+import 'package:home_page/featuers/auth/presentation/bloc/user_state.dart';
 
 
 
