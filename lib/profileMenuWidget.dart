@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // FirebaseAuth import edildi
-import 'package:home_page/auth.dart';
-import 'package:home_page/profile_settings_page.dart';
+import 'package:home_page/screens/auth_screen.dart';
+import 'package:home_page/screens/profile_settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ShowProfileMenuWidget extends StatelessWidget {

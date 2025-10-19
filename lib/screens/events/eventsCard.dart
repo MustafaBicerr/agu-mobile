@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/screens/events/diger.dart';
 import 'package:home_page/screens/events/konferans.dart';
 import 'package:home_page/screens/events/gezi.dart';

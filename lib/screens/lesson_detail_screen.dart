@@ -4,16 +4,16 @@ import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:home_page/services/dbHelper.dart';
 import 'package:home_page/models/lesson.dart';
 
-class LessonDetail extends StatefulWidget {
+class LessonDetailScreen extends StatefulWidget {
   final Lesson lesson; // Seçilen ders
 
-  LessonDetail({required this.lesson});
+  LessonDetailScreen({required this.lesson});
 
   @override
-  State<LessonDetail> createState() => _LessonDetailState();
+  State<LessonDetailScreen> createState() => _LessonDetailState();
 }
 
-class _LessonDetailState extends State<LessonDetail> {
+class _LessonDetailState extends State<LessonDetailScreen> {
   var dbHelper = Dbhelper();
   TextEditingController txtName = TextEditingController();
   TextEditingController txtClass = TextEditingController();
@@ -453,7 +453,7 @@ class _LessonDetailState extends State<LessonDetail> {
     });
     methods.navigateToPage(
         context,
-        LessonDetail(
+        LessonDetailScreen(
             lesson: updatedLessons!
                 .firstWhere((lesson) => lesson.id == widget.lesson.id)));
     showDialog(
@@ -514,7 +514,7 @@ class _LessonDetailState extends State<LessonDetail> {
     });
     methods.navigateToPage(
         context,
-        LessonDetail(
+        LessonDetailScreen(
             lesson: updatedLessons!
                 .firstWhere((lesson) => lesson.id == widget.lesson.id)));
     showDialog(

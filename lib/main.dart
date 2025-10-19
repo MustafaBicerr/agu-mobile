@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:home_page/lesson_add_page.dart';
-import 'package:home_page/auth.dart';
+import 'package:home_page/screens/lesson_add_page.dart';
+import 'package:home_page/screens/auth_screen.dart';
 import 'package:home_page/buttons/buttons.dart';
 import 'package:home_page/data/database_service.dart';
 import 'package:home_page/profileMenuWidget.dart';
@@ -25,10 +25,10 @@ import 'package:home_page/services/apiService.dart';
 import 'package:home_page/services/database_matching_service.dart';
 import 'package:home_page/services/dbHelper.dart';
 import 'package:home_page/models/lesson.dart';
-import 'package:home_page/lessonDetail.dart';
+import 'package:home_page/screens/lesson_detail_screen.dart';
 import 'package:home_page/screens/menu_page.dart';
 import 'package:home_page/methods.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/upcomingLesson.dart';
 import 'package:home_page/services/events_service';
 import 'package:home_page/utilts/constants/image_constants.dart';
@@ -133,7 +133,7 @@ class _MyAppState extends State<MyApp> {
   void getAllDatas() {
     if (isDataFetched != true) {
       lessons = []; // Başlangıçta boş liste
-      // getLessons(); // Dersleri yükle
+       getLessons(); // Dersleri yükle
       getDailyLesson();
       userService.loadProfileImage();
       userService.loadUserData();
@@ -179,7 +179,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     // if (result != null && result == true) {
-    //   getLessons();
+       getLessons();
     // }
   }
 
@@ -190,7 +190,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     // if (result != null && result == true) {
-    //   getLessons();
+       getLessons();
     // }
   }
 

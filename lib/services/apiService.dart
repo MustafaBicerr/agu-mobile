@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/utilts/constants/constants.dart';
 import 'package:home_page/models/academic.dart';
 import 'package:home_page/models/events.dart';

@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:home_page/auth.dart';
+import 'package:home_page/screens/auth_screen.dart';
 import 'package:home_page/main.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/screens/starting_animation.dart';
 import 'package:home_page/models/Store.dart';
 

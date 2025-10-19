@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/bottom.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/services/dbHelper.dart';
 import 'package:home_page/models/lesson.dart';
 import 'package:sqflite/sqflite.dart';

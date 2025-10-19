@@ -9,7 +9,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:home_page/animations/progress_ring_widget.dart';
 import 'package:home_page/bottom.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html/parser.dart' as dom;

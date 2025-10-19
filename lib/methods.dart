@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:home_page/lessonDetail.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/screens/lesson_detail_screen.dart';
+import 'package:home_page/services/notification_service.dart';
 
 import 'package:home_page/services/dbHelper.dart';
 

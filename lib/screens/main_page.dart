@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/bottom.dart';
 import 'package:home_page/buttons/buttons.dart';
-import 'package:home_page/lesson_add_page.dart';
+import 'package:home_page/screens/lesson_add_page.dart';
 import 'package:home_page/methods.dart';
 import 'package:home_page/models/lesson.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/profileMenuWidget.dart';
 import 'package:home_page/screens/events/eventsCard.dart';
 import 'package:home_page/screens/menu_page.dart' hide methods;
@@ -229,7 +229,7 @@ class _MainPageState extends State<MainPage> {
     );
 
     if (result != null && result == true) {
-        // getLessons();  
+         getLessons();  
     }
   }
 

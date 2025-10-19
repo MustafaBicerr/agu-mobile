@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:home_page/Feedbacks.dart';
+import 'package:home_page/screens/feedbacks_screen.dart';
 import 'package:home_page/screens/add_class_screen.dart';
 import 'package:home_page/screens/guide_page.dart';
 import 'package:home_page/screens/sisAddLessonsPage.dart';
@@ -13,7 +13,7 @@ import 'package:home_page/services/dbHelper.dart';
 import 'package:home_page/models/lesson.dart';
 import 'package:home_page/methods.dart';
 import 'package:intl/intl.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/services/notification_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 

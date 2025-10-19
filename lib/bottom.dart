@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:home_page/main.dart';
-import 'package:home_page/news.dart';
-import 'package:home_page/notifications.dart';
+import 'package:home_page/screens/news_page.dart';
+import 'package:home_page/services/notification_service.dart';
 import 'package:home_page/screens/TimeTableDetail.dart';
 import 'package:home_page/screens/attendance.dart';
 import 'package:home_page/screens/class_schedule_screen.dart';
