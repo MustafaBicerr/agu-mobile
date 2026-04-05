@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+/captures/
+.cxx/
+
+# Makineye özel
+/local.properties
+
+# İmza (asıl proje kökü .gitignore ile de korunur)
+key.properties
+**/*.keystore
+**/*.jks
+
+# Eski / özel
+GeneratedPluginRegistrant.java

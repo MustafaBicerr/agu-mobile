@@ -1,0 +1,89 @@
+# --- Ortak ---
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+.atom/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# --- IDE ---
+*.iml
+*.ipr
+*.iws
+.idea/
+# İstersen paylaşılan VS Code ayarlarını repoya ekleyebilirsin:
+# .vscode/
+
+# --- Flutter / Dart ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+coverage/
+
+# Derleme / sembol / obfuscation çıktıları
+app.*.symbols
+app.*.map.json
+
+# --- Android: kaynaklar ve Gradle yapılandırması TUTULUR ---
+# Makineye özel SDK yolu (yeni bilgisayarda Flutter kendi yazar)
+android/local.properties
+
+# Gradle önbelleği ve ara çıktılar
+android/.gradle/
+android/**/.gradle/
+android/**/build/
+android/**/captures/
+android/**/.cxx/
+android/**/ndk-build/
+
+# Yayın imzası sırları (asla commit etme)
+android/key.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+
+# Eski Flutter şablonu (tekil app çıktı klasörleri)
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# --- iOS: Xcode projesi, Podfile, Runner, Info.plist TUTULUR ---
+# CocoaPods / Flutter üretimi — `flutter pub get` ve ilk iOS build bunları yeniden oluşturur
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/.last_build_id
+
+# Kullanıcıya özel Xcode verisi
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+ios/**/.generated/
+
+# --- Linux / macOS / Windows (Flutter masaüstü) ---
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# --- Gizli ortam dosyaları (isteğe bağlı) ---
+.env
+.env.*
+!.env.example
+
+# --- Firebase / diğer (functions) ---
+functions/node_modules/
+functions/lib/
+functions/.runtimeconfig.json
