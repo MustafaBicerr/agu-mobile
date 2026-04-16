@@ -1,11 +1,13 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-/// ------------------------------------------------------------
-/// GENEL TASARIM BİLEŞENLERİ
-/// ------------------------------------------------------------
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:agu_mobile/features/platform_access/presentation/services/login_service.dart';
+import 'package:agu_mobile/features/menu/presentation/pages/menu_page.dart';
 
+/// ------------------------------------------------------------
+/// SHARED PREFERENCES
+/// ------------------------------------------------------------
 class CanvasPrefs {
   static const _key = 'is_prep';
 
@@ -31,12 +33,136 @@ Future<void> openLinkInApp(String url) async {
   );
 }
 
+/// Otomatik giriş yaparak platforma yönlendirir.
+/// Eğer kaydedilmiş bilgi yoksa kullanıcıyı Şifreler sayfasına yönlendirir.
+Future<void> _openWithAutoLogin(
+  BuildContext context, {
+  required String title,
+  required String url,
+  required String mailPrefKey,
+  required String passwordPrefKey,
+  required String mailFieldName,
+  required String passwordFieldName,
+  required String loginButtonFieldXPath,
+  required String keyword,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final savedMail = prefs.getString(mailPrefKey) ?? '';
+  final savedPassword = prefs.getString(passwordPrefKey) ?? '';
+
+  if (!context.mounted) return;
+
+  if (savedMail.isNotEmpty && savedPassword.isNotEmpty) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LoginService(
+          title: title,
+          url: url,
+          mail: savedMail,
+          password: savedPassword,
+          mailFieldName: mailFieldName,
+          passwordFieldName: passwordFieldName,
+          loginButtonFieldXPath: loginButtonFieldXPath,
+          keyword: keyword,
+        ),
+      ),
+    );
+  } else {
+    // Bilgi kayıtlı değil — kullanıcıya bildir ve yönlendir
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Giriş Bilgisi Bulunamadı'),
+        content: const Text(
+          'Otomatik giriş yapabilmek için önce '
+          '"Menü → Şifreler ve Giriş" sayfasından '
+          'bilgilerinizi kaydetmeniz gerekiyor.\n\n'
+          'Şimdi o sayfaya gitmek ister misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // Kayıt yok, düz tarayıcıda aç
+              openLinkInApp(url);
+            },
+            child: const Text('Manuel Giriş'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PasswordScreen()),
+              );
+            },
+            child: const Text('Bilgi Kaydet'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// SIS otomatik giriş kısayolu
+void _openSIS(BuildContext context) {
+  _openWithAutoLogin(
+    context,
+    title: 'SIS AGU',
+    url: 'https://sis.agu.edu.tr/oibs/std/login.aspx',
+    mailPrefKey: 'sisMail',
+    passwordPrefKey: 'sisPassword',
+    mailFieldName: 'txtParamT01',
+    passwordFieldName: 'txtParamT02',
+    loginButtonFieldXPath: "//*[@id='btnLoginn']",
+    keyword: 'index',
+  );
+}
+
+/// Canvas Bölüm otomatik giriş kısayolu
+void _openCanvasBolum(BuildContext context) {
+  _openWithAutoLogin(
+    context,
+    title: 'Canvas AGU',
+    url: 'https://canvas.agu.edu.tr/login/canvas',
+    mailPrefKey: 'canvasMail',
+    passwordPrefKey: 'canvasPassword',
+    mailFieldName: 'pseudonym_session[unique_id]',
+    passwordFieldName: 'pseudonym_session[password]',
+    loginButtonFieldXPath: "//*[@id='login_form']/button",
+    keyword: 'success',
+  );
+}
+
+/// Canvas Hazırlık otomatik giriş kısayolu
+void _openCanvasHazirlik(BuildContext context) {
+  _openWithAutoLogin(
+    context,
+    title: 'Canvas PREP',
+    url: 'https://canvasfl.agu.edu.tr/login/canvas',
+    mailPrefKey: 'prepCanvasMail',
+    passwordPrefKey: 'prepCanvasPassword',
+    mailFieldName: 'pseudonym_session[unique_id]',
+    passwordFieldName: 'pseudonym_session[password]',
+    loginButtonFieldXPath: "//*[@id='login_form']/button",
+    keyword: 'success',
+  );
+}
+
+/// ------------------------------------------------------------
+/// GENEL TASARIM BİLEŞENLERİ (Yenilenmiş)
+/// ------------------------------------------------------------
+
+/// Glassmorphism efektli, animasyonlu gradient Hero Header
 class HeroHeader extends StatelessWidget {
   final String emoji;
   final String title;
   final String subtitle;
-  final List<Widget> actions; // Hızlı işlemler
+  final List<Widget> actions;
   final List<Color> gradient;
+  final IconData? backgroundIcon;
+
   const HeroHeader({
     super.key,
     required this.emoji,
@@ -44,48 +170,113 @@ class HeroHeader extends StatelessWidget {
     required this.subtitle,
     required this.actions,
     required this.gradient,
+    this.backgroundIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 160,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           colors: gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text('$emoji $title',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Text(
-              subtitle,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.white.withOpacity(.95)),
-              maxLines: 3,
+          // Arka plan dekoratif ikon
+          if (backgroundIcon != null)
+            Positioned(
+              right: -10,
+              bottom: -10,
+              child: Icon(
+                backgroundIcon,
+                size: 110,
+                color: Colors.white.withOpacity(0.08),
+              ),
+            ),
+          // Dekoratif daireler
+          Positioned(
+            left: -20,
+            top: -20,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.08),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: actions
-                  .map((w) => Padding(
-                      padding: const EdgeInsets.only(right: 8), child: w))
-                  .toList(),
+          Positioned(
+            right: 40,
+            top: -30,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
+          // İçerik
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Emoji badge
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 20)),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withOpacity(0.92),
+                        height: 1.4,
+                      ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                // Quick action chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: actions
+                        .map((w) => Padding(
+                            padding: const EdgeInsets.only(right: 8), child: w))
+                        .toList(),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -94,68 +285,132 @@ class HeroHeader extends StatelessWidget {
   }
 }
 
+/// Glassmorphism efektli quick action chip
 class QuickActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback? onTap; // nullable yaptık
+  final VoidCallback? onTap;
 
   const QuickActionChip({
     super.key,
     required this.icon,
     required this.label,
-    this.onTap, // artık optional
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      onPressed: onTap, // null olursa chip pasif olur
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      elevation: 1,
-      backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(.9),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.22),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
+/// Geliştirilmiş SectionCard – renkli ikon arka planı + gölge
 class SectionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final List<Widget> children;
   final Color? color;
+  final Color? iconColor;
+  final Color? iconBgColor;
+
   const SectionCard({
     super.key,
     required this.icon,
     required this.title,
     required this.children,
     this.color,
+    this.iconColor,
+    this.iconBgColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: color ?? Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      margin: const EdgeInsets.only(top: 12),
+    final theme = Theme.of(context);
+    final effectiveIconColor = iconColor ?? theme.colorScheme.primary;
+    final effectiveIconBg =
+        iconBgColor ?? theme.colorScheme.primary.withOpacity(0.1);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        color: color ?? theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(icon),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: effectiveIconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: effectiveIconColor),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
               ),
             ]),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             ...children,
           ],
         ),
@@ -164,36 +419,406 @@ class SectionCard extends StatelessWidget {
   }
 }
 
+/// Gelişmiş Bullet – emoji veya ikon desteği
 class Bullet extends StatelessWidget {
   final String text;
-  const Bullet(this.text, {super.key});
+  final String? leadEmoji;
+  final IconData? leadIcon;
+  final Color? leadColor;
+
+  const Bullet(
+    this.text, {
+    super.key,
+    this.leadEmoji,
+    this.leadIcon,
+    this.leadColor,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('•  '),
-        Expanded(child: Text(text)),
-      ]),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (leadEmoji != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 1),
+              child: Text(leadEmoji!, style: const TextStyle(fontSize: 14)),
+            )
+          else if (leadIcon != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 2),
+              child: Icon(leadIcon, size: 16, color: leadColor),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 6),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.45,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.85),
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+/// Renkli etiketler
 class TagWrap extends StatelessWidget {
   final List<String> tags;
-  const TagWrap(this.tags, {super.key});
+  final Color? tagColor;
+  const TagWrap(this.tags, {super.key, this.tagColor});
+
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: -4,
-      children: tags
-          .map((t) => Chip(
-                label: Text(t),
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-              ))
-          .toList(),
+    final color = tagColor ?? Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        children: tags
+            .map((t) => Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: color.withOpacity(0.25),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    t,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+/// Link kartı – tıklanabilir dış bağlantı
+/// [onTapOverride] verilmişse URL yerine bu callback çalışır.
+class LinkCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final String url;
+  final Color? color;
+  final void Function(BuildContext context)? onTapOverride;
+
+  const LinkCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.url,
+    this.subtitle,
+    this.color,
+    this.onTapOverride,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTapOverride != null
+              ? onTapOverride!(context)
+              : openLinkInApp(url),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: chipColor.withOpacity(0.06),
+              border: Border.all(
+                color: chipColor.withOpacity(0.15),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: chipColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 18, color: chipColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.55),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.open_in_new_rounded,
+                  size: 16,
+                  color: chipColor.withOpacity(0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Info banner – önemli bilgi kutusu
+class InfoBanner extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final Color? color;
+
+  const InfoBanner({
+    super.key,
+    required this.text,
+    this.icon = Icons.lightbulb_outline_rounded,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bannerColor = color ?? const Color(0xFFFFA726);
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: bannerColor.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: bannerColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Numaralı adım widget'ı
+class NumberedStep extends StatelessWidget {
+  final int number;
+  final String title;
+  final String description;
+  final Color? color;
+  final bool isLast;
+
+  const NumberedStep({
+    super.key,
+    required this.number,
+    required this.title,
+    required this.description,
+    this.color,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final stepColor = color ?? Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Numara ve çizgi
+            SizedBox(
+              width: 36,
+              child: Column(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [stepColor, stepColor.withOpacity(0.7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$number',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: stepColor.withOpacity(0.2),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Konum / yer kartı
+class PlaceCard extends StatelessWidget {
+  final String emoji;
+  final String name;
+  final String? location;
+
+  const PlaceCard({
+    super.key,
+    required this.emoji,
+    required this.name,
+    this.location,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withOpacity(0.35),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
+                  ),
+                ),
+                if (location != null)
+                  Text(
+                    location!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.55),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -214,8 +839,9 @@ class CityKayseriPage extends StatelessWidget {
             emoji: '🏙️',
             title: 'Kayseri – Şehri Tanı',
             subtitle:
-                'Erciyes eteklerinde sanayi & öğrenci şehri. Talas–Merkez hattı, uygun yaşam ve zengin mutfak.',
+                'Erciyes eteklerinde tarih, kültür ve sanayi bir arada. Öğrenci dostu fiyatlar, zengin mutfak ve ulaşım kolaylığı seni bekliyor.',
             gradient: const [Color(0xFF277194), Color(0xFF36B2A5)],
+            backgroundIcon: Icons.location_city_rounded,
             actions: [
               QuickActionChip(
                 icon: Icons.credit_card,
@@ -229,45 +855,120 @@ class CityKayseriPage extends StatelessWidget {
                     'https://www.kayseriulasim.com/hatlar/tramvay'),
               ),
               QuickActionChip(
-                icon: Icons.medical_services_outlined,
+                icon: Icons.place_outlined,
                 label: 'AGÜ Konum',
                 onTap: () =>
                     openLinkInApp('https://maps.app.goo.gl/gUWhJn5hsmamtRpMA'),
               ),
             ],
           ),
-          const SectionCard(
-            icon: Icons.info_outline,
+
+          // Genel Bakış
+          SectionCard(
+            icon: Icons.info_outline_rounded,
             title: 'Genel Bakış',
+            iconColor: const Color(0xFF277194),
+            iconBgColor: const Color(0xFF277194).withOpacity(0.1),
             children: const [
               Bullet(
-                  'Kayseri, Anadolu’nun ortasında, İç Anadolu’nun önemli şehirlerinden biridir.'),
+                'Kayseri, Anadolu\'nun merkezinde, İç Anadolu\'nun en dinamik şehirlerinden biridir.',
+                leadEmoji: '📍',
+              ),
               Bullet(
-                  'Erciyes Dağı şehrin simgesidir; kışın kayak, yazın doğa yürüyüşleri için popülerdir.'),
-              Bullet('Öğrenci dostu fiyatlar; ulaşım kolay.'),
-              TagWrap(['Rakım 1000m+', 'Kuru iklim', 'Erciyes']),
+                'Erciyes Dağı (3.917 m) şehrin simgesidir — kışın kayak, yazın trekking için idealdir.',
+                leadEmoji: '⛷️',
+              ),
+              Bullet(
+                'Öğrenci dostu uygun fiyatlar, gelişmiş toplu taşıma ağı ve güvenli yaşam ortamı.',
+                leadEmoji: '🎓',
+              ),
+              Bullet(
+                'Kuru karasal iklim: Yazlar sıcak, kışlar soğuk ve karlı geçer. Katmanlı giyinin!',
+                leadEmoji: '🌡️',
+              ),
+              TagWrap(
+                ['Rakım 1000m+', 'Kuru iklim', 'Erciyes', 'Sanayi şehri'],
+                tagColor: Color(0xFF277194),
+              ),
             ],
           ),
+
+          // Tarih ve Kültür
+          SectionCard(
+            icon: Icons.museum_outlined,
+            title: 'Tarih ve Kültür',
+            iconColor: const Color(0xFF8D6E63),
+            iconBgColor: const Color(0xFF8D6E63).withOpacity(0.1),
+            children: const [
+              Bullet(
+                'Kültepe (Kaniş Karum): Anadolu\'nun bilinen en eski yazılı tabletleri burada keşfedildi.',
+                leadEmoji: '🏛️',
+              ),
+              Bullet(
+                'Gevher Nesibe Şifahanesi — dünyanın ilk tıp eğitimi merkezlerinden biri.',
+                leadEmoji: '🏥',
+              ),
+              Bullet(
+                'Hunat Hatun Külliyesi, Kayseri Kalesi ve Döner Kümbet tarihi dokunun öne çıkan yapıları.',
+                leadEmoji: '🕌',
+              ),
+              Bullet(
+                'Kapalı Çarşı ve tarihi hanlar — özellikle pastırma, sucuk ve mücevher alışverişi ünlü.',
+                leadEmoji: '🛍️',
+              ),
+            ],
+          ),
+
+          // Gezilecek Noktalar
+          SectionCard(
+            icon: Icons.explore_outlined,
+            title: 'Gezilecek Noktalar',
+            iconColor: const Color(0xFF2E7D32),
+            iconBgColor: const Color(0xFF2E7D32).withOpacity(0.1),
+            children: const [
+              PlaceCard(
+                  emoji: '🏔️',
+                  name: 'Erciyes Kayak Merkezi',
+                  location: 'Kampüse ~25 km'),
+              PlaceCard(
+                  emoji: '🏰',
+                  name: 'Kayseri Kalesi & Cumhuriyet Meydanı',
+                  location: 'Şehir merkezi'),
+              PlaceCard(
+                  emoji: '🕌',
+                  name: 'Hunat Hatun Külliyesi',
+                  location: 'Kale yanı'),
+              PlaceCard(
+                  emoji: '🏠',
+                  name: 'Ağırnas – Mimar Sinan\'ın doğduğu köy',
+                  location: 'Merkeze ~45 dk'),
+              PlaceCard(
+                  emoji: '🦩',
+                  name: 'Sultan Sazlığı Kuş Cenneti',
+                  location: 'Develi ilçesi'),
+              PlaceCard(
+                  emoji: '🧱',
+                  name: 'Talas Eski Sokakları',
+                  location: 'Tramvay ile erişilebilir'),
+            ],
+          ),
+
+          // Yöresel Lezzetler
           const SectionCard(
             icon: Icons.restaurant_outlined,
-            title: 'Tarih ve Kültür',
-            children: const [
+            title: 'Yöresel Lezzetler',
+            iconColor: Color(0xFFD84315),
+            iconBgColor: Color(0x1AD84315),
+            children: [
+              Bullet('Kayseri mantısı — mutlaka deneyin, çok farklı!',
+                  leadEmoji: '🥟'),
               Bullet(
-                  'Kültepe (Kaniş Karum): Anadolu’nun en eski yazılı tabletleri burada bulundu.'),
-              Bullet(
-                  'Hunat Hatun Külliyesi, Gevher Nesibe Şifahanesi ve Kayseri Kalesi mutlaka görülmeli.'),
-              Bullet(
-                  'Meşhur Kapalı Çarşı ve tarihi hanlar, şehri tanımak için iyi başlangıç noktalarıdır.'),
-            ],
-          ),
-          const SectionCard(
-            icon: Icons.place_outlined,
-            title: 'Gezilecek Noktalar',
-            children: const [
-              Bullet('Cumhuriyet Meydanı, Saat Kulesi, Kayseri Kalesi'),
-              Bullet('Hunat Hatun Külliyesi, Gevher Nesibe Şifahanesi'),
-              Bullet('Talas eski sokakları, Ağırnas (Mimar Sinan)'),
-              Bullet('Erciyes Kayak Merkezi, Sultan Sazlığı'),
+                  'Pastırma & sucuk — Kayseri dışında böylesini bulamazsınız.',
+                  leadEmoji: '🥩'),
+              Bullet('Yağlama, höşmerim, nevzine ve katmer tatlıları.',
+                  leadEmoji: '🍮'),
+              Bullet('Cıvıklı (çırpılmış ayran) ve Talas çöreği.',
+                  leadEmoji: '🥤'),
             ],
           ),
         ],
@@ -281,6 +982,7 @@ class CityKayseriPage extends StatelessWidget {
 /// ------------------------------------------------------------
 class UniversityOverviewPage extends StatelessWidget {
   const UniversityOverviewPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -291,73 +993,107 @@ class UniversityOverviewPage extends StatelessWidget {
             emoji: '🏫',
             title: 'Üniversiteye Genel Bakış',
             subtitle:
-                'Kampüs haritası, kütüphane, öğrenci işleri ve en çok kullanılan bağlantılar.',
+                'AGÜ Sümer Kampüsü — modern laboratuvarlar, zengin kütüphane, öğrenci işleri ve dijital platformlar.',
             gradient: const [Color(0xFF5C6BC0), Color(0xFF26A69A)],
+            backgroundIcon: Icons.school_rounded,
             actions: [
               QuickActionChip(
-                  icon: Icons.map_outlined,
-                  label: 'Kampüs Haritası',
-                  onTap: () => openLinkInApp(
-                      'https://www.arkitera.com/gorus/fabrikadan-universite-kampusune-agu-sumer-kampusu/')),
+                icon: Icons.map_outlined,
+                label: 'Kampüs Haritası',
+                onTap: () => openLinkInApp(
+                    'https://www.arkitera.com/gorus/fabrikadan-universite-kampusune-agu-sumer-kampusu/'),
+              ),
               QuickActionChip(
-                  icon: Icons.local_library_outlined,
-                  label: 'Kütüphane',
-                  onTap: () => openLinkInApp(
-                      'https://katalog.agu.edu.tr/yordam/?p=0&dil=0')),
+                icon: Icons.local_library_outlined,
+                label: 'Kütüphane',
+                onTap: () => openLinkInApp(
+                    'https://katalog.agu.edu.tr/yordam/?p=0&dil=0'),
+              ),
               QuickActionChip(
-                  icon: Icons.business_center_outlined,
-                  label: 'Öğrenci İşleri',
-                  onTap: () => openLinkInApp('https://oidb-tr.agu.edu.tr/')),
-            ],
-          ),
-          SectionCard(
-            icon: Icons.link_outlined,
-            title: 'Sık Kullanılanlar',
-            children: [
-              const Bullet(
-                  'Akademik Takvim • SIS • LMS (Canvas) • E-posta (Zimbra)'),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ActionChip(
-                    label: const Text('SIS'),
-                    onPressed: () => openLinkInApp(
-                        'https://sis.agu.edu.tr/oibs/std/login.aspx'),
-                  ),
-                  // ValueListenableBuilder<bool>(
-                  //   valueListenable: isPrepNotifier,
-                  //   builder: (_, isPrep, __) => ActionChip(
-                  //     label: Text(canvasLabel(isPrep)),
-                  //     onPressed: () => openLinkInApp(canvasUrl(isPrep)),
-                  //   ),
-                  // ),
-                  ActionChip(
-                      label: const Text('Canvas/Hazırlık'),
-                      onPressed: () => openLinkInApp(
-                          'https://canvasfl.agu.edu.tr/login/canvas')),
-                  ActionChip(
-                      label: const Text('Canvas/Bölüm'),
-                      onPressed: () => openLinkInApp(
-                          'https://canvas.agu.edu.tr/login/canvas')),
-                  ActionChip(
-                    label: const Text('E-posta'),
-                    onPressed: () => openLinkInApp('https://posta.agu.edu.tr/'),
-                  ),
-                ],
+                icon: Icons.business_center_outlined,
+                label: 'Öğrenci İşleri',
+                onTap: () => openLinkInApp('https://oidb-tr.agu.edu.tr/'),
               ),
             ],
           ),
+
+          // Sık Kullanılan Platformlar
+          SectionCard(
+            icon: Icons.dashboard_outlined,
+            title: 'Dijital Platformlar',
+            iconColor: const Color(0xFF5C6BC0),
+            iconBgColor: const Color(0xFF5C6BC0).withOpacity(0.1),
+            children: [
+              LinkCard(
+                icon: Icons.school_outlined,
+                label: 'SIS – Öğrenci Bilgi Sistemi',
+                subtitle: 'Ders kayıt, not görüntüleme, transkript',
+                url: 'https://sis.agu.edu.tr/oibs/std/login.aspx',
+                color: const Color(0xFF5C6BC0),
+                onTapOverride: _openSIS,
+              ),
+              LinkCard(
+                icon: Icons.laptop_mac_outlined,
+                label: 'Canvas – Hazırlık',
+                subtitle: 'İngilizce hazırlık dersleri için LMS',
+                url: 'https://canvasfl.agu.edu.tr/login/canvas',
+                color: const Color(0xFF26A69A),
+                onTapOverride: _openCanvasHazirlik,
+              ),
+              LinkCard(
+                icon: Icons.laptop_chromebook_outlined,
+                label: 'Canvas – Bölüm',
+                subtitle: 'Lisans/yüksek lisans dersleri için LMS',
+                url: 'https://canvas.agu.edu.tr/login/canvas',
+                color: const Color(0xFF42A5F5),
+                onTapOverride: _openCanvasBolum,
+              ),
+              const LinkCard(
+                icon: Icons.email_outlined,
+                label: 'Zimbra E-posta',
+                subtitle: '@agu.edu.tr kurumsal posta',
+                url: 'https://posta.agu.edu.tr/',
+                color: Color(0xFFEF5350),
+              ),
+            ],
+          ),
+
+          // Kampüs Olanakları
           const SectionCard(
-            icon: Icons.school_outlined,
-            title: 'Eğitim ve Kampüs Olanakları',
+            icon: Icons.apartment_outlined,
+            title: 'Kampüs Olanakları',
+            iconColor: Color(0xFF26A69A),
+            iconBgColor: Color(0x1A26A69A),
             children: [
               Bullet(
-                  'Nitelikli eğitim: Mühendislik, Yaşam ve Doğa Bilimleri, Mimarlık, İktisadi ve Sosyal Bilimler fakülteleri,'),
-              Bullet('Zengin kütüphane ve 7/24 açık çalışma salonları,'),
-              Bullet('Modern laboratuvarlar ve araştırma merkezleri,'),
-              Bullet('Spor kompleksi, yemekhane ve sosyal yaşam alanları,'),
-              Bullet('Öğrenci kulüpleri, etkinlikler ve kültürel aktiviteler.'),
+                '4 fakülte: Mühendislik, Yaşam & Doğa Bilimleri, Mimarlık, İktisadi & Sosyal Bilimler.',
+                leadEmoji: '🏢',
+              ),
+              Bullet(
+                'Modern kütüphane, 7/24 açık çalışma salonları ve sessiz bireysel çalışma odaları.',
+                leadEmoji: '📚',
+              ),
+              Bullet(
+                'Araştırma laboratuvarları: nano-teknoloji, yapay zeka, malzeme bilimi ve daha fazlası.',
+                leadEmoji: '🔬',
+              ),
+              Bullet(
+                'Spor kompleksi: fitness salonu, basketbol/voleybol sahaları, tenis kortu.',
+                leadEmoji: '🏋️',
+              ),
+              Bullet(
+                'Açık ve kapalı sosyal alanlar, amfiteatr, sergi mekanları.',
+                leadEmoji: '🎭',
+              ),
             ],
+          ),
+
+          // Bilgi kutusu
+          const InfoBanner(
+            text:
+                'Kampüs, tarihi Sümerbank Bez Fabrikası alanında kurulmuştur. Endüstriyel mimarinin modern eğitimle buluştuğu eşsiz bir ortam sunar.',
+            icon: Icons.auto_awesome_rounded,
+            color: Color(0xFF5C6BC0),
           ),
         ],
       ),
@@ -378,11 +1114,12 @@ class FoodCafesPage extends StatelessWidget {
       child: Column(
         children: [
           HeroHeader(
-            emoji: '🍽',
+            emoji: '🍽️',
             title: 'Yemek & Kafeler',
             subtitle:
-                'Yemekhane saatleri, kampüs çevresi ve bütçe dostu öneriler.',
-            gradient: const [Color(0xFFEF6C00), Color(0xFFAB47BC)],
+                'Yemekhane menüleri, kampüs içi kafeler ve çevredeki bütçe dostu mekanlar.',
+            gradient: const [Color(0xFFEF6C00), Color(0xFFE65100)],
+            backgroundIcon: Icons.restaurant_rounded,
             actions: [
               QuickActionChip(
                 icon: Icons.restaurant_menu,
@@ -397,32 +1134,72 @@ class FoodCafesPage extends StatelessWidget {
             ],
           ),
 
-          // ——— Bölümler ———
+          // Yemekhane
           const SectionCard(
             icon: Icons.schedule_outlined,
-            title: 'Yemekhane Saatleri',
+            title: 'Yemekhane Bilgileri',
+            iconColor: Color(0xFFEF6C00),
+            iconBgColor: Color(0x1AEF6C00),
             children: [
-              Bullet('Öğle servisi: 11:00 – 14:00'),
+              Bullet('Öğle servisi: 11:00 – 14:00',
+                  leadIcon: Icons.access_time_rounded,
+                  leadColor: Color(0xFFEF6C00)),
               Bullet(
-                  'Yoğun saatlerde erken git; menüyü uygulamadan kontrol et.'),
+                  'Yoğun saatlerde erken git — 11:30-12:00 arası en rahat zaman dilimi.',
+                  leadIcon: Icons.tips_and_updates_outlined,
+                  leadColor: Color(0xFFFFA726)),
+              Bullet('İki yemekhane mevcut: Fabrika Binası ve Ambar Binası.',
+                  leadIcon: Icons.location_on_outlined,
+                  leadColor: Color(0xFF66BB6A)),
               Bullet(
-                  "Yemekhaneler, Fabrika Binası ve Ambar Binasında yer almaktadır."),
-              TagWrap(['Günlük Menü', 'Aylık Menü']),
+                  'Günlük ve aylık menü bilgilerini uygulamadan takip edebilirsin.',
+                  leadIcon: Icons.phone_android_outlined,
+                  leadColor: Color(0xFF42A5F5)),
+              TagWrap(['Günlük Menü', 'Aylık Menü', 'Diyet Seçenekleri'],
+                  tagColor: Color(0xFFEF6C00)),
             ],
           ),
 
-          const SectionCard(
-            icon: Icons.local_cafe,
-            title: 'Kampüs & Çevresi',
-            children: [
-              Bullet('Starbucks--> Çelik Bina A Blok karşısı'),
-              Bullet('Elif Cafe--> Çelik Bina B Blok 2. kat'),
-              Bullet('Vivoli Cafe--> Çelik Bina C Blok'),
-              Bullet(
-                  'Mobil Kafe(Karavan)--> Fabrika Binası-Erkilet Giriş arası'),
-              Bullet('Fabrika Binası Kantin'),
-              Bullet('The House Cafe Müze'),
+          // Kampüs Kafeleri
+          SectionCard(
+            icon: Icons.local_cafe_rounded,
+            title: 'Kampüs İçi Kafeler',
+            iconColor: const Color(0xFF6D4C41),
+            iconBgColor: const Color(0xFF6D4C41).withOpacity(0.1),
+            children: const [
+              PlaceCard(
+                  emoji: '☕',
+                  name: 'Starbucks',
+                  location: 'Çelik Bina A Blok karşısı'),
+              PlaceCard(
+                  emoji: '🍰',
+                  name: 'Elif Cafe',
+                  location: 'Çelik Bina B Blok, 2. kat'),
+              PlaceCard(
+                  emoji: '🧁',
+                  name: 'Vivoli Cafe',
+                  location: 'Çelik Bina C Blok'),
+              PlaceCard(
+                  emoji: '🚐',
+                  name: 'Mobil Kafe (Karavan)',
+                  location: 'Fabrika Binası – Erkilet girişi arası'),
+              PlaceCard(
+                  emoji: '🏪',
+                  name: 'Fabrika Binası Kantin',
+                  location: 'Ana yemekhane yanı'),
+              PlaceCard(
+                  emoji: '🎨',
+                  name: 'The House Cafe Müze',
+                  location: 'Müze binası içi'),
             ],
+          ),
+
+          // İpucu
+          const InfoBanner(
+            text:
+                'Öğrenci bütçesi ipucu: Yemekhane en ekonomik seçenek. Hafta içi kantinlerde de uygun fiyatlı sandviç ve tost bulabilirsin.',
+            icon: Icons.savings_outlined,
+            color: Color(0xFF66BB6A),
           ),
         ],
       ),
@@ -446,8 +1223,9 @@ class TransportPage extends StatelessWidget {
             emoji: '🚌',
             title: 'Ulaşım Rehberi',
             subtitle:
-                'Kayseray + otobüs hatları, güzergâh sorgu, yoğun saat ipuçları ve güvenli dönüş önerileri.',
+                'Kayseray tramvay, otobüs hatları, güzergah sorgu ve yoğun saat önerileri.',
             gradient: const [Color(0xFF00897B), Color(0xFF1976D2)],
+            backgroundIcon: Icons.directions_bus_rounded,
             actions: [
               QuickActionChip(
                 icon: Icons.map_outlined,
@@ -474,24 +1252,91 @@ class TransportPage extends StatelessWidget {
               ),
             ],
           ),
-          const SectionCard(
-            icon: Icons.directions_bus_filled,
-            title: 'Otobüs',
-            children: [
-              Bullet('Çok sayıda hattın Talas–Merkez bağlantısı var.'),
-              Bullet('Yoğun saatlerde alternatif durakları tercih et.'),
-              Bullet('Hat ve saatleri web sitesinden anlık kontrol et.'),
+
+          // Kayseray
+          SectionCard(
+            icon: Icons.directions_railway_filled_rounded,
+            title: 'Tramvay (Kayseray)',
+            iconColor: const Color(0xFF1976D2),
+            iconBgColor: const Color(0xFF1976D2).withOpacity(0.1),
+            children: const [
+              Bullet(
+                'Ana hat: Talas ↔ Şehir Merkezi — kampüse en yakın ulaşım.',
+                leadEmoji: '🚊',
+              ),
+              Bullet(
+                'Sınav ve iş çıkış saatlerinde kalabalık olabilir (17:00-18:30).',
+                leadEmoji: '⏰',
+              ),
+              Bullet(
+                'Talas yönünde son tramvay saatini mutlaka kontrol et!',
+                leadEmoji: '⚠️',
+              ),
+              Bullet(
+                'Alternatif: Yoğun saatlerde otobüs hatları daha rahat olabilir.',
+                leadEmoji: '💡',
+              ),
             ],
           ),
+
+          // Otobüs
+          SectionCard(
+            icon: Icons.directions_bus_filled_rounded,
+            title: 'Otobüs',
+            iconColor: const Color(0xFF00897B),
+            iconBgColor: const Color(0xFF00897B).withOpacity(0.1),
+            children: const [
+              Bullet(
+                'Çok sayıda hat, Talas–Merkez ve çevre ilçelere bağlantı sağlar.',
+                leadEmoji: '🚌',
+              ),
+              Bullet(
+                'Hat ve saatleri web sitesinden anlık kontrol edebilirsin.',
+                leadEmoji: '📱',
+              ),
+              Bullet(
+                'Yoğun saatlerde alternatif durakları kullan — birkaç durak yürü, boş binesin.',
+                leadEmoji: '🏃',
+              ),
+            ],
+          ),
+
+          // Ulaşım Kartı
           const SectionCard(
-            icon: Icons.directions_railway_filled,
-            title: 'Tramvay',
+            icon: Icons.credit_card_rounded,
+            title: 'Ulaşım Kartı (Kart38)',
+            iconColor: Color(0xFFF57C00),
+            iconBgColor: Color(0x1AF57C00),
             children: [
-              Bullet(
-                  'Talas ↔ Merkez hattı özellikle sınav/iş çıkışında kalabalık.'),
-              Bullet('Durak yoğunluğuna göre otobüs alternatiflerini bil.'),
-              Bullet(
-                  'Tramvay saatlerini uygulama veya web sitesinden takip et.'),
+              NumberedStep(
+                number: 1,
+                title: 'Kart Al',
+                description:
+                    'Kart38 işlem merkezinden veya yetkili bayilerden öğrenci kartı temin et.',
+                color: Color(0xFFF57C00),
+              ),
+              NumberedStep(
+                number: 2,
+                title: 'HES Kodu Eşle',
+                description:
+                    'Kartını HES kodunla eşleştirmeyi unutma (gerekiyorsa).',
+                color: Color(0xFFF57C00),
+              ),
+              NumberedStep(
+                number: 3,
+                title: 'Bakiye Yükle',
+                description:
+                    'Online, ATM veya kart bayilerinden bakiye yükleyebilirsin.',
+                color: Color(0xFFF57C00),
+              ),
+              NumberedStep(
+                number: 4,
+                title: 'Biniş Yap',
+                description:
+                    'Öğrenci kartıyla indirimli biniş hakkını kullan. Aktarma 60 dk içinde ücretsiz!',
+                color: Color(0xFFF57C00),
+                isLast: true,
+              ),
             ],
           ),
         ],
@@ -505,24 +1350,6 @@ class TransportPage extends StatelessWidget {
 /// ------------------------------------------------------------
 class RegistrationDocsPage extends StatelessWidget {
   const RegistrationDocsPage({super.key});
-  Widget _step(String title, String desc, {bool done = false}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? Colors.green : null),
-        const SizedBox(width: 8),
-        Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(desc),
-          const SizedBox(height: 10),
-        ])),
-      ],
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -534,44 +1361,100 @@ class RegistrationDocsPage extends StatelessWidget {
             emoji: '🧾',
             title: 'Kayıt & Evrak İşleri',
             subtitle:
-                'SIS, danışman onayı ve e-Devlet belgeleri için kısa yol.',
+                'SIS, danışman onayı, e-Devlet belgeleri ve kayıt süreci için adım adım rehber.',
             gradient: const [Color(0xFF7B1FA2), Color(0xFF512DA8)],
+            backgroundIcon: Icons.assignment_rounded,
             actions: [
-              QuickActionChip(
-                  icon: Icons.assignment_outlined,
-                  label: 'Öğrenci Belgesi',
-                  onTap: () => openLinkInApp(
-                      'https://sis.agu.edu.tr/oibs/std/login.aspx')),
-              QuickActionChip(
-                  icon: Icons.note_alt_outlined,
-                  label: 'Transkript',
-                  onTap: () => openLinkInApp(
-                      'https://sis.agu.edu.tr/oibs/std/login.aspx')),
+              Builder(builder: (ctx) => QuickActionChip(
+                icon: Icons.assignment_outlined,
+                label: 'Öğrenci Belgesi',
+                onTap: () => _openSIS(ctx),
+              )),
+              Builder(builder: (ctx) => QuickActionChip(
+                icon: Icons.note_alt_outlined,
+                label: 'Transkript',
+                onTap: () => _openSIS(ctx),
+              )),
             ],
           ),
-          SectionCard(
-            icon: Icons.format_list_numbered,
-            title: 'Adım Adım',
-            children: [
-              _step('Kayıt Belgeleri',
-                  'Kimlik, fotoğraf, yerleştirme belgesi, varsa muafiyet.'),
-              _step('SIS Hesabı',
-                  'Bilgilerini güncelle; danışmanını ve bölümünü kontrol et.'),
-              _step('Ders Kayıt', 'Danışman onayı olmadan kayıt tamamlanmaz.',
-                  done: false),
-              _step('Ücret/Harç', 'Varsa ödeme planını kontrol et.',
-                  done: false),
-            ],
-          ),
+
+          // Kayıt Adımları
           const SectionCard(
-            icon: Icons.info_outline,
-            title: 'İpuçları',
+            icon: Icons.checklist_rounded,
+            title: 'Kayıt Adımları',
+            iconColor: Color(0xFF7B1FA2),
+            iconBgColor: Color(0x1A7B1FA2),
             children: [
-              Bullet(
-                  'Belgeleri PDF olarak sakla; e-Devlet şifrelerini güvenli tut.'),
-              Bullet(
-                  'Kayıt günlerinde yoğunluk olur, işlemleri erken tamamla.'),
+              NumberedStep(
+                number: 1,
+                title: 'Belgeleri Hazırla',
+                description:
+                    'Kimlik, vesikalık fotoğraf, YKS yerleştirme belgesi, lise diploması. Varsa muafiyet belgeleri de getir.',
+                color: Color(0xFF7B1FA2),
+              ),
+              NumberedStep(
+                number: 2,
+                title: 'SIS Hesabını Aktifleştir',
+                description:
+                    'sis.agu.edu.tr adresinden bilgilerini güncelle; danışmanını ve bölümünü kontrol et.',
+                color: Color(0xFF7B1FA2),
+              ),
+              NumberedStep(
+                number: 3,
+                title: 'Ders Kaydını Yap',
+                description:
+                    'Akademik takvime göre ders kaydını aç, danışman onayını mutlaka al. Onaysız kayıt geçersiz!',
+                color: Color(0xFF7B1FA2),
+              ),
+              NumberedStep(
+                number: 4,
+                title: 'Harç/Katkı Payı',
+                description:
+                    'Varsa harç ödemesini bankadan veya online yap. Ödeme sonrası dekontu sakla.',
+                color: Color(0xFF7B1FA2),
+              ),
+              NumberedStep(
+                number: 5,
+                title: 'Öğrenci Kimliği & E-posta',
+                description:
+                    'Kampüste öğrenci kimliğini al, @agu.edu.tr e-posta hesabını aktifleştir.',
+                color: Color(0xFF7B1FA2),
+                isLast: true,
+              ),
             ],
+          ),
+
+          // Önemli Bağlantılar
+          SectionCard(
+            icon: Icons.link_rounded,
+            title: 'Önemli Bağlantılar',
+            iconColor: const Color(0xFF512DA8),
+            iconBgColor: const Color(0xFF512DA8).withOpacity(0.1),
+            children: [
+              LinkCard(
+                icon: Icons.school_outlined,
+                label: 'SIS Girişi',
+                subtitle: 'Ders kayıt, not ve transkript',
+                url: 'https://sis.agu.edu.tr/oibs/std/login.aspx',
+                color: const Color(0xFF7B1FA2),
+                onTapOverride: _openSIS,
+              ),
+              const LinkCard(
+                icon: Icons.business_center_outlined,
+                label: 'Öğrenci İşleri Daire Başkanlığı',
+                subtitle: 'İletişim ve randevu',
+                url: 'https://oidb-tr.agu.edu.tr/',
+                color: Color(0xFF512DA8),
+              ),
+            ],
+          ),
+
+          // İpuçları
+          const InfoBanner(
+            text:
+                'Tüm belgeleri PDF olarak yedekle ve e-Devlet şifrelerini güvenli tut. Kayıt döneminde yoğunluk olur, işlemleri erken tamamla!',
+            icon: Icons.warning_amber_rounded,
+            color: Color(0xFFFFA726),
           ),
         ],
       ),
@@ -582,9 +1465,9 @@ class RegistrationDocsPage extends StatelessWidget {
 /// ------------------------------------------------------------
 /// 6) AKADEMİK HAYATTA KALMA
 /// ------------------------------------------------------------
-
 class AcademicSurvivalPage extends StatelessWidget {
   const AcademicSurvivalPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -595,46 +1478,115 @@ class AcademicSurvivalPage extends StatelessWidget {
             emoji: '🎓',
             title: 'Akademik Hayatta Kalma',
             subtitle:
-                'Ders seçimi, not sistemi, kütüphane ve sınav haftası taktikleri.',
+                'Ders seçimi, not sistemi, sınav stratejileri ve akademik başarı için ipuçları.',
             gradient: const [Color(0xFF3949AB), Color(0xFF00ACC1)],
+            backgroundIcon: Icons.auto_stories_rounded,
             actions: [
+              Builder(builder: (ctx) => QuickActionChip(
+                icon: Icons.school_outlined,
+                label: 'SIS',
+                onTap: () => _openSIS(ctx),
+              )),
+              Builder(builder: (ctx) => QuickActionChip(
+                icon: Icons.laptop_mac,
+                label: 'Canvas/Hazırlık',
+                onTap: () => _openCanvasHazirlik(ctx),
+              )),
+              Builder(builder: (ctx) => QuickActionChip(
+                icon: Icons.laptop_chromebook,
+                label: 'Canvas/Bölüm',
+                onTap: () => _openCanvasBolum(ctx),
+              )),
               QuickActionChip(
-                  icon: Icons.school_outlined,
-                  label: 'SIS',
-                  onTap: () => openLinkInApp('https://sis.agu.edu.tr/')),
-              QuickActionChip(
-                  icon: Icons.laptop_mac,
-                  label: 'Canvas/Hazırlık',
-                  onTap: () => openLinkInApp(
-                      'https://canvasfl.agu.edu.tr/login/canvas')),
-              QuickActionChip(
-                  icon: Icons.laptop_mac,
-                  label: 'Canvas/Bölüm',
-                  onTap: () =>
-                      openLinkInApp('https://canvas.agu.edu.tr/login/canvas')),
-              QuickActionChip(
-                  icon: Icons.local_library_outlined,
-                  label: 'Kütüphane',
-                  onTap: () => openLinkInApp(
-                      'https://katalog.agu.edu.tr/yordam/?p=0&dil=0')),
+                icon: Icons.local_library_outlined,
+                label: 'Kütüphane',
+                onTap: () => openLinkInApp(
+                    'https://katalog.agu.edu.tr/yordam/?p=0&dil=0'),
+              ),
             ],
           ),
+
+          // Not Sistemi
           const SectionCard(
-            icon: Icons.rule_folder_outlined,
+            icon: Icons.grading_rounded,
             title: 'Not Sistemi & Devamsızlık',
+            iconColor: Color(0xFF3949AB),
+            iconBgColor: Color(0x1A3949AB),
             children: [
-              Bullet('Ders planındaki % ağırlıkları ve barajları öğren.'),
-              Bullet('Devamsızlık limitlerini kaçırma; derslere düzenli git.'),
+              Bullet(
+                "Her dersin syllabus'ında % ağırlıkları (quiz, ödev, midterm, final) belirtilir.",
+                leadEmoji: '📊',
+              ),
+              Bullet(
+                'Genel not ortalaması (GPA) 4.00 üzerinden hesaplanır.',
+                leadEmoji: '📈',
+              ),
+              Bullet(
+                'Devamsızlık limitleri ders bazında değişir — genelde %20-30 arası. Aş!ma!',
+                leadEmoji: '⚠️',
+              ),
+              Bullet(
+                'Dersten W (withdraw) çekmek notunu etkilemez ama kredi kaybedersin.',
+                leadEmoji: '📝',
+              ),
             ],
           ),
+
+          // Çalışma Taktikleri
           const SectionCard(
-            icon: Icons.tips_and_updates_outlined,
-            title: 'Çalışma Taktikleri',
+            icon: Icons.psychology_outlined,
+            title: 'Çalışma Stratejileri',
+            iconColor: Color(0xFF00ACC1),
+            iconBgColor: Color(0x1A00ACC1),
             children: [
-              Bullet('Kütüphanede sessiz alan + grup çalışma odaları.'),
-              Bullet('Haftalık plan: ders sonrası 20–30 dk tekrar.'),
+              NumberedStep(
+                number: 1,
+                title: 'Düzenli Tekrar Yap',
+                description:
+                    'Her dersten sonra 20-30 dk tekrar. Spaced repetition tekniğini kullan.',
+                color: Color(0xFF00ACC1),
+              ),
+              NumberedStep(
+                number: 2,
+                title: 'Çalışma Ortamını Seç',
+                description:
+                    'Kütüphanedeki sessiz alanlar, grup çalışma odaları veya kafeler — sana uygun olanı bul.',
+                color: Color(0xFF00ACC1),
+              ),
+              NumberedStep(
+                number: 3,
+                title: 'Haftalık Plan Oluştur',
+                description:
+                    'Dersleri, ödev deadlineları ve kişisel zamanı dengele. Google Calendar veya Notion kullan.',
+                color: Color(0xFF00ACC1),
+              ),
+              NumberedStep(
+                number: 4,
+                title: 'Sınav Haftası Stratejisi',
+                description:
+                    'Eski sınav sorularını çöz, özet defteri hazırla, 25 dk çalış - 5 dk mola (Pomodoro).',
+                color: Color(0xFF00ACC1),
+                isLast: true,
+              ),
+            ],
+          ),
+
+          // Faydalı Araçlar
+          const SectionCard(
+            icon: Icons.build_circle_outlined,
+            title: 'Faydalı Araçlar',
+            iconColor: Color(0xFF7E57C2),
+            iconBgColor: Color(0x1A7E57C2),
+            children: [
+              Bullet('Notion / OneNote — ders notları organize etmek için.',
+                  leadEmoji: '📓'),
+              Bullet('Anki / Quizlet — flashcard ile etkili tekrar.',
+                  leadEmoji: '🃏'),
+              Bullet('Forest / Focus To-Do — odaklanma uygulamaları.',
+                  leadEmoji: '🌳'),
               Bullet(
-                  'Sınav haftası: eski sorular, özet defter, küçük molalar.'),
+                  'ChatGPT / Perplexity — kavram araştırma (kopyala değil!).',
+                  leadEmoji: '🤖'),
             ],
           ),
         ],
@@ -648,6 +1600,7 @@ class AcademicSurvivalPage extends StatelessWidget {
 /// ------------------------------------------------------------
 class SocialLifePage extends StatelessWidget {
   const SocialLifePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -657,37 +1610,104 @@ class SocialLifePage extends StatelessWidget {
           HeroHeader(
             emoji: '🧑‍🤝‍🧑',
             title: 'Sosyal Yaşam',
-            subtitle: 'Kulüpler, etkinlikler ve spor alanları ile sosyalleş.',
+            subtitle:
+                'Kulüpler, etkinlikler, spor aktiviteleri ve kampüs sosyal hayatı.',
             gradient: const [Color(0xFF8E24AA), Color(0xFFE53935)],
+            backgroundIcon: Icons.celebration_rounded,
             actions: [
               QuickActionChip(
-                  icon: Icons.groups_2_outlined,
-                  label: 'Kulüpler',
-                  onTap: () =>
-                      openLinkInApp('https://od-tr.agu.edu.tr/kulupler')),
+                icon: Icons.groups_2_outlined,
+                label: 'Kulüpler',
+                onTap: () => openLinkInApp('https://od-tr.agu.edu.tr/kulupler'),
+              ),
               QuickActionChip(
-                  icon: Icons.sports_soccer_outlined,
-                  label: 'Spor',
-                  onTap: () => openLinkInApp(
-                      'https://booked.agu.edu.tr/Web/view-calendar.php')),
+                icon: Icons.sports_soccer_outlined,
+                label: 'Spor Rezervasyon',
+                onTap: () => openLinkInApp(
+                    'https://booked.agu.edu.tr/Web/view-calendar.php'),
+              ),
             ],
           ),
+
+          // Kulüpler
           const SectionCard(
-            icon: Icons.celebration_outlined,
-            title: 'Nereden Başlamalı?',
+            icon: Icons.groups_rounded,
+            title: 'Öğrenci Kulüpleri',
+            iconColor: Color(0xFF8E24AA),
+            iconBgColor: Color(0x1A8E24AA),
             children: [
-              Bullet('Tanıtım haftasında kulüp stantlarını gez.'),
               Bullet(
-                  'Deneme toplantılarına katıl, ilgi alanına uygun 1–2 kulüp seç.'),
-              Bullet('Gönüllülük programlarını takip et.'),
+                'Tanıtım haftasında stantları gez, etkinliklere katıl, 1-2 kulüp seç.',
+                leadEmoji: '🎪',
+              ),
+              Bullet(
+                'Teknik kulüpler: Bilim ve Teknoloji, AGU Automotive Robotik, IEEE.',
+                leadEmoji: '💻',
+              ),
+              Bullet(
+                'Sosyal/kültürel: Tiyatro, Müzik, Fotoğrafçılık, Münazara.',
+                leadEmoji: '🎭',
+              ),
+              Bullet(
+                'Doğa/spor: Dağcılık, Kayak, Bisiklet.',
+                leadEmoji: '🏔️',
+              ),
+              Bullet(
+                'Gönüllülük: Toplum hizmeti, mentörlük ve yardımlaşma grupları.',
+                leadEmoji: '🤝',
+              ),
             ],
           ),
+
+          // Spor
           const SectionCard(
-            icon: Icons.coffee_outlined,
-            title: 'Buluşma & Çalışma Mekânları',
+            icon: Icons.fitness_center_rounded,
+            title: 'Spor İmkanları',
+            iconColor: Color(0xFFE53935),
+            iconBgColor: Color(0x1AE53935),
             children: [
-              Bullet('Kampüs içi sessiz/yarı sessiz alanlar.'),
-              Bullet('Talas ve merkezde uygun fiyatlı kafeler.'),
+              PlaceCard(
+                  emoji: '🏋️',
+                  name: 'Fitness Salonu',
+                  location: 'Spor Kompleksi'),
+              PlaceCard(
+                  emoji: '🏀', name: 'Basketbol Sahası', location: 'Açık Saha'),
+              PlaceCard(
+                  emoji: '🏐', name: 'Voleybol Sahası', location: 'Açık Alan'),
+              PlaceCard(
+                  emoji: '🎾', name: 'Tenis Kortu', location: 'Açık Alan'),
+              InfoBanner(
+                text:
+                    'Spor tesislerini kullanmak için booked.agu.edu.tr üzerinden online rezervasyon yapman gerekiyor.',
+                icon: Icons.event_available_rounded,
+                color: Color(0xFFE53935),
+              ),
+            ],
+          ),
+
+          // Sosyalleşme tüyoları
+          const SectionCard(
+            icon: Icons.emoji_people_rounded,
+            title: 'Sosyalleşme Rehberi',
+            iconColor: Color(0xFFFF7043),
+            iconBgColor: Color(0x1AFF7043),
+            children: [
+              Bullet(
+                'İlk haftalarda oryantasyon etkinliklerine mutlaka katıl.',
+                leadEmoji: '🌟',
+              ),
+              Bullet(
+                'Kampüs kafelerinde zaman geçir, yeni insanlarla tanış.',
+                leadEmoji: '☕',
+              ),
+              Bullet(
+                'Talas merkezde öğrenci dostu kafeler ve buluşma noktaları var.',
+                leadEmoji: '📍',
+              ),
+              Bullet(
+                'Instagram\'da @aguogrenci ve kulüp hesaplarını takip et.',
+                leadEmoji: '📱',
+              ),
             ],
           ),
         ],
@@ -701,14 +1721,6 @@ class SocialLifePage extends StatelessWidget {
 /// ------------------------------------------------------------
 class HousingPage extends StatelessWidget {
   const HousingPage({super.key});
-  Widget _check(String t) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Row(children: [
-          const Icon(Icons.check, size: 18),
-          const SizedBox(width: 6),
-          Expanded(child: Text(t))
-        ]),
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -718,39 +1730,120 @@ class HousingPage extends StatelessWidget {
         children: [
           HeroHeader(
             emoji: '🏠',
-            title: 'Yurt ve Barınma',
+            title: 'Yurt & Barınma',
             subtitle:
-                'Yurt ipuçları, ev kiralama checklist ve taşınma tüyoları.',
+                'Yurt başvurusu, ev kiralama rehberi ve taşınma ipuçları.',
             gradient: const [Color(0xFF00796B), Color(0xFF43A047)],
+            backgroundIcon: Icons.home_rounded,
             actions: [
               QuickActionChip(
-                  icon: Icons.home_work_outlined,
-                  label: 'Yurt Başvurusu',
-                  onTap: () => openLinkInApp(
-                      'https://www.turkiye.gov.tr/gsb-yurt-basvurusu')),
-              // QuickActionChip(
-              //     icon: Icons.key_outlined,
-              //     label: 'Ev Kiralama',
-              //     onTap: () => openLinkInApp('Kampüs haritası — link ekleyin')),
+                icon: Icons.home_work_outlined,
+                label: 'KYK Yurt Başvurusu',
+                onTap: () => openLinkInApp(
+                    'https://www.turkiye.gov.tr/gsb-yurt-basvurusu'),
+              ),
             ],
           ),
+
+          // Yurt
           const SectionCard(
             icon: Icons.domain_outlined,
-            title: 'Yurt İpuçları',
-            children: const [
-              Bullet('Sessiz saatler ve ortak alan kurallarını öğren.'),
+            title: 'Yurt Hayatı',
+            iconColor: Color(0xFF00796B),
+            iconBgColor: Color(0x1A00796B),
+            children: [
               Bullet(
-                  'Dolap kilidi, priz çoklayıcı ve kulaklık kurtarıcı olur.'),
+                'KYK yurtlarına başvuru e-Devlet üzerinden yapılır. Son tarihleri takip et.',
+                leadEmoji: '📅',
+              ),
+              Bullet(
+                'Yurt kurallarını öğren: sessiz saatler, misafir politikası, ortak alan düzeni.',
+                leadEmoji: '📋',
+              ),
+              Bullet(
+                'Yanında getir: dolap kilidi, priz çoklayıcı, kulaklık ve göz bandı.',
+                leadEmoji: '🎒',
+              ),
+              Bullet(
+                'Oda arkadaşıyla iletişimi sağlam tut — temizlik ve uyku düzeni konuşun.',
+                leadEmoji: '🤝',
+              ),
             ],
           ),
-          SectionCard(
-            icon: Icons.checklist_outlined,
-            title: 'Ev Kiralama Checklist',
+
+          // Ev Kiralama
+          const SectionCard(
+            icon: Icons.key_rounded,
+            title: 'Ev Kiralama Rehberi',
+            iconColor: Color(0xFF43A047),
+            iconBgColor: Color(0x1A43A047),
             children: [
-              _check('Isınma türü (doğalgaz/merkezi) ve fatura durumu'),
-              _check('Tramvaya yürüme mesafesi, market/eczane yakınlığı'),
-              _check('Depozito & sözleşme; dairede nem/ısı yalıtımı'),
+              NumberedStep(
+                number: 1,
+                title: 'Lokasyon Araştır',
+                description:
+                    'Tramvaya yürüme mesafesi, market/eczane yakınlığı ve güvenli mahalle seç.',
+                color: Color(0xFF43A047),
+              ),
+              NumberedStep(
+                number: 2,
+                title: 'Evi İncele',
+                description:
+                    'Isınma türü (doğalgaz/merkezi), nem durumu, yalıtım ve tesisat kontrol et.',
+                color: Color(0xFF43A047),
+              ),
+              NumberedStep(
+                number: 3,
+                title: 'Sözleşme & Depozito',
+                description:
+                    'Sözleşmeyi dikkatlice oku, depozito miktarını ve ödeme takvimini netleştir.',
+                color: Color(0xFF43A047),
+              ),
+              NumberedStep(
+                number: 4,
+                title: 'Faturaları Ayarla',
+                description:
+                    'Elektrik, su, doğalgaz ve internet aboneliklerini hemen devral veya yeni aç.',
+                color: Color(0xFF43A047),
+              ),
+              NumberedStep(
+                number: 5,
+                title: 'Ev Arkadaşı Bul',
+                description:
+                    'Sosyal medya grupları ve üniversite panoları üzerinden güvenilir ev arkadaşı ara.',
+                color: Color(0xFF43A047),
+                isLast: true,
+              ),
             ],
+          ),
+
+          // Tavsiye mahalleler
+          const SectionCard(
+            icon: Icons.map_rounded,
+            title: 'Önerilen Bölgeler',
+            iconColor: Color(0xFF0288D1),
+            iconBgColor: Color(0x1A0288D1),
+            children: [
+              PlaceCard(
+                  emoji: '📍',
+                  name: 'Talas Merkez',
+                  location: 'Tramvay hattı üzeri, kampüse yakın'),
+              PlaceCard(
+                  emoji: '📍',
+                  name: 'Mevlana Mahallesi',
+                  location: 'Uygun fiyatlı, öğrenci yoğun'),
+              PlaceCard(
+                  emoji: '📍',
+                  name: 'Kıranardı',
+                  location: 'Sakin, yeni binalar'),
+            ],
+          ),
+
+          const InfoBanner(
+            text:
+                'İlk kez ev tutuyorsan, tecrübeli bir arkadaşını veya ailen yanına alarak evi gezmenizi öneriyoruz.',
+            icon: Icons.family_restroom_rounded,
+            color: Color(0xFF00796B),
           ),
         ],
       ),
@@ -759,14 +1852,127 @@ class HousingPage extends StatelessWidget {
 }
 
 /// ------------------------------------------------------------
-/// 9) ACİL DURUMLAR & İLETİŞİM (son sayfa, sağ ok YOK)
+/// 9) ACİL DURUMLAR & İLETİŞİM
 /// ------------------------------------------------------------
+class EmergencyContactsPage extends StatelessWidget {
+  const EmergencyContactsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+      child: Column(
+        children: [
+          HeroHeader(
+            emoji: '🚨',
+            title: 'Acil Durumlar & İletişim',
+            subtitle:
+                'Acil numaralar, kampüs güvenliği ve psikolojik destek bilgileri.',
+            gradient: const [Color(0xFFD32F2F), Color(0xFFFF5722)],
+            backgroundIcon: Icons.emergency_rounded,
+            actions: [
+              QuickActionChip(
+                icon: Icons.phone_in_talk_rounded,
+                label: '112 Acil',
+                onTap: () => launchUrl(Uri.parse('tel:112')),
+              ),
+              QuickActionChip(
+                icon: Icons.local_hospital_outlined,
+                label: 'Sağlık Merkezi',
+                onTap: () {},
+              ),
+            ],
+          ),
+
+          // Acil Numaralar
+          const SectionCard(
+            icon: Icons.phone_rounded,
+            title: 'Acil Numaralar',
+            iconColor: Color(0xFFD32F2F),
+            iconBgColor: Color(0x1AD32F2F),
+            children: [
+              Bullet('112 — Genel Acil Yardım',
+                  leadIcon: Icons.emergency_rounded,
+                  leadColor: Color(0xFFD32F2F)),
+              Bullet('155 — Polis İmdat',
+                  leadIcon: Icons.local_police_rounded,
+                  leadColor: Color(0xFF1565C0)),
+              Bullet('110 — İtfaiye',
+                  leadIcon: Icons.local_fire_department_rounded,
+                  leadColor: Color(0xFFE65100)),
+              Bullet('182 — Alo Psikolojik Destek Hattı',
+                  leadIcon: Icons.psychology_rounded,
+                  leadColor: Color(0xFF7B1FA2)),
+              Bullet('183 — Sosyal Destek Hattı',
+                  leadIcon: Icons.support_agent_rounded,
+                  leadColor: Color(0xFF00897B)),
+            ],
+          ),
+
+          // Kampüs Güvenliği
+          SectionCard(
+            icon: Icons.shield_rounded,
+            title: 'Kampüs İçi Destek',
+            iconColor: const Color(0xFF1565C0),
+            iconBgColor: const Color(0xFF1565C0).withOpacity(0.1),
+            children: const [
+              Bullet(
+                'Kampüs güvenlik birimi 7/24 aktif. Ana girişten veya telefonla ulaşabilirsin.',
+                leadEmoji: '🛡️',
+              ),
+              Bullet(
+                'Sağlık ünitesi kampüste mevcut — küçük müdahaleler ve yönlendirme yapılır.',
+                leadEmoji: '🏥',
+              ),
+              Bullet(
+                'Psikolojik Danışmanlık Birimi: Stres, uyum sorunları ve kişisel destek için randevu al.',
+                leadEmoji: '🧠',
+              ),
+            ],
+          ),
+
+          // Öğrenci İşleri
+          SectionCard(
+            icon: Icons.support_outlined,
+            title: 'Öğrenci Destek Birimleri',
+            iconColor: const Color(0xFF00897B),
+            iconBgColor: const Color(0xFF00897B).withOpacity(0.1),
+            children: const [
+              LinkCard(
+                icon: Icons.business_center_outlined,
+                label: 'Öğrenci İşleri Daire Başkanlığı',
+                subtitle: 'Kayıt, belge ve genel işlemler',
+                url: 'https://oidb-tr.agu.edu.tr/',
+                color: Color(0xFF00897B),
+              ),
+              LinkCard(
+                icon: Icons.people_outline_rounded,
+                label: 'Öğrenci Dekanlığı',
+                subtitle: 'Danışmanlık ve yönlendirme',
+                url: 'https://od-tr.agu.edu.tr/',
+                color: Color(0xFF5C6BC0),
+              ),
+            ],
+          ),
+
+          const InfoBanner(
+            text:
+                'Acil bir durumda panik yapma. Önce güvenli bir yere geç, ardından 112\'yi ara. Kampüs güvenliğe de mutlaka haber ver.',
+            icon: Icons.warning_amber_rounded,
+            color: Color(0xFFD32F2F),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// ------------------------------------------------------------
-/// PAGEVIEW: REHBER (orta sağda >, orta solda <; son sayfada > gizli)
+/// PAGEVIEW: REHBER — Geliştirilmiş navigasyon
 /// ------------------------------------------------------------
 class GuidePage extends StatefulWidget {
   const GuidePage({super.key});
+
   @override
   State<GuidePage> createState() => _GuidePageState();
 }
@@ -775,6 +1981,19 @@ class _GuidePageState extends State<GuidePage> {
   final PageController _controller = PageController();
   int _index = 0;
   bool _isAnimating = false;
+
+  // Her sayfanın başlık bilgisi
+  static const List<_PageInfo> _pageInfos = [
+    _PageInfo('Kayseri', Icons.location_city_rounded),
+    _PageInfo('Üniversite', Icons.school_rounded),
+    _PageInfo('Yemek', Icons.restaurant_rounded),
+    _PageInfo('Ulaşım', Icons.directions_bus_rounded),
+    _PageInfo('Kayıt', Icons.assignment_rounded),
+    _PageInfo('Akademik', Icons.auto_stories_rounded),
+    _PageInfo('Sosyal', Icons.celebration_rounded),
+    _PageInfo('Barınma', Icons.home_rounded),
+    _PageInfo('Acil', Icons.emergency_rounded),
+  ];
 
   late final List<Widget> _pages = [
     const CityKayseriPage(key: PageStorageKey('city_kayseri')),
@@ -785,12 +2004,12 @@ class _GuidePageState extends State<GuidePage> {
     const AcademicSurvivalPage(key: PageStorageKey('academic_survival')),
     const SocialLifePage(key: PageStorageKey('social_life')),
     const HousingPage(key: PageStorageKey('housing')),
-    //const EmergencyContactsPage(key: PageStorageKey('emergency')),
+    const EmergencyContactsPage(key: PageStorageKey('emergency')),
   ];
 
   @override
   void dispose() {
-    _controller.dispose(); // 💡 kritik: controller'ı serbest bırak
+    _controller.dispose();
     super.dispose();
   }
 
@@ -800,8 +2019,8 @@ class _GuidePageState extends State<GuidePage> {
     if (isLast) return;
     _isAnimating = true;
     await _controller.nextPage(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
     );
     _isAnimating = false;
   }
@@ -812,8 +2031,8 @@ class _GuidePageState extends State<GuidePage> {
     if (isFirst) return;
     _isAnimating = true;
     await _controller.previousPage(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
     );
     _isAnimating = false;
   }
@@ -825,7 +2044,14 @@ class _GuidePageState extends State<GuidePage> {
     final bool isLast = _index == _pages.length - 1;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rehber'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          'Rehber',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Stack(
         children: [
           PageView.builder(
@@ -836,54 +2062,165 @@ class _GuidePageState extends State<GuidePage> {
             itemBuilder: (_, i) => _pages[i],
           ),
 
-          // ← önceki
+          // ← Sol ok
           if (!isFirst)
             Positioned(
-              left: 8,
-              top: size.height * 0.45,
-              child: Semantics(
-                label: 'Önceki sayfa',
-                button: true,
-                child: Material(
-                  color: Colors.transparent,
-                  child: IconButton(
-                    icon: const Text('<', style: TextStyle(fontSize: 28)),
-                    onPressed: _goPrev,
-                  ),
-                ),
+              left: 4,
+              top: size.height * 0.38,
+              child: _NavArrow(
+                icon: Icons.chevron_left_rounded,
+                onTap: _goPrev,
+                tooltip: 'Önceki sayfa',
               ),
             ),
 
-          // → sonraki (son sayfa hariç)
+          // → Sağ ok
           if (!isLast)
             Positioned(
-              right: 8,
-              top: size.height * 0.45,
-              child: Semantics(
-                label: 'Sonraki sayfa',
-                button: true,
-                child: Material(
-                  color: Colors.transparent,
-                  child: IconButton(
-                    icon: const Text('>', style: TextStyle(fontSize: 28)),
-                    onPressed: _goNext,
-                  ),
-                ),
+              right: 4,
+              top: size.height * 0.38,
+              child: _NavArrow(
+                icon: Icons.chevron_right_rounded,
+                onTap: _goNext,
+                tooltip: 'Sonraki sayfa',
               ),
             ),
 
+          // Alt bar: sayfa göstergeleri + başlık
           Positioned(
-            bottom: 12,
+            bottom: 0,
             left: 0,
             right: 0,
-            child: IgnorePointer(
-              child: Center(
-                child: Text('Kaydırınız',
-                    style: Theme.of(context).textTheme.bodySmall),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
+                    Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                  stops: const [0.0, 0.4, 1.0],
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Sayfa göstergeleri
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        _pages.length,
+                        (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: i == _index ? 24 : 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: i == _index
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Sayfa başlığı
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _pageInfos[_index].icon,
+                          size: 14,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_index + 1}/${_pages.length} • ${_pageInfos[_index].title}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sayfa bilgi modeli
+class _PageInfo {
+  final String title;
+  final IconData icon;
+  const _PageInfo(this.title, this.icon);
+}
+
+/// Gelişmiş navigasyon ok butonu
+class _NavArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _NavArrow({
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: tooltip,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 26,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
       ),
     );
   }

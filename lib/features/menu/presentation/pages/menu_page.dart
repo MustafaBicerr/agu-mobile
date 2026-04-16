@@ -7,6 +7,7 @@ import 'package:agu_mobile/features/lessons/presentation/pages/sis_add_lessons_p
 import 'package:agu_mobile/features/lessons/presentation/pages/sis_weekly_program_page.dart';
 import 'package:agu_mobile/features/app/presentation/pages/starting_animation_page.dart';
 import 'package:agu_mobile/features/wifi/presentation/pages/wifi_page.dart';
+import 'package:agu_mobile/features/downloads/presentation/pages/downloads_page.dart';
 import 'package:agu_mobile/features/menu/data/models/academic.dart';
 import 'package:agu_mobile/shared/services/api_service.dart';
 import 'package:agu_mobile/features/lessons/data/services/db_helper.dart';
@@ -47,6 +48,11 @@ class MenuPage extends StatelessWidget {
         icon: Icons.key,
         iconColor: Colors.grey,
         page: PasswordScreen()),
+    MenuItem(
+        title: "İndirilenler",
+        icon: Icons.download_rounded,
+        iconColor: Colors.teal,
+        page: const DownloadsPage()),
     MenuItem(
         title: "Akademik Takvim",
         icon: Icons.calendar_month,
