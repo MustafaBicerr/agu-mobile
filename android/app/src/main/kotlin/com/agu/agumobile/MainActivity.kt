@@ -1,9 +1,12 @@
 package com.agu.agumobile
 
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
+import android.content.Intent
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -46,9 +49,58 @@ class MainActivity : FlutterActivity() {
                             result.error("DELETE_ERROR", e.message, null)
                         }
                     }
+                    "openLocalFile" -> {
+                        val path = call.arguments as? String
+                        if (path.isNullOrBlank()) {
+                            result.error("INVALID_ARGS", "path gerekli", null)
+                            return@setMethodCallHandler
+                        }
+                        try {
+                            val ok = openAppScopedFileForView(path)
+                            result.success(ok)
+                        } catch (e: SecurityException) {
+                            result.error("INVALID_PATH", e.message, null)
+                        } catch (e: ActivityNotFoundException) {
+                            result.success(false)
+                        } catch (e: Exception) {
+                            result.error("OPEN_ERROR", e.message, null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    /**
+     * Uygulama korumalı dizinlerindeki dosyayı (indirilenler) harici uygulamada açar.
+     * READ_MEDIA_* gerektirmez; yalnızca FileProvider ile content:// URI paylaşılır.
+     */
+    private fun openAppScopedFileForView(path: String): Boolean {
+        val file = File(path).canonicalFile
+        if (!file.exists() || !file.isFile) return false
+
+        val ctx = applicationContext
+        val appFiles = ctx.filesDir.canonicalFile
+        val cacheDir = ctx.cacheDir.canonicalFile
+        val extDir = ctx.getExternalFilesDir(null)?.canonicalFile
+
+        val allowed = file.path.startsWith(appFiles.path) ||
+            file.path.startsWith(cacheDir.path) ||
+            (extDir != null && file.path.startsWith(extDir.path))
+        if (!allowed) {
+            throw SecurityException("Dosya yolu uygulama alanı dışında")
+        }
+
+        val authority = "${ctx.packageName}.localfileprovider"
+        val uri = FileProvider.getUriForFile(ctx, authority, file)
+        val mime = getMimeType(file.name) ?: "application/octet-stream"
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(intent)
+        return true
     }
 
     private fun saveToPublicDownloads(filename: String, bytes: ByteArray): String? {

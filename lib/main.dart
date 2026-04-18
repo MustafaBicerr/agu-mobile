@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:agu_mobile/shared/config/firebase_options.dart';
 
@@ -30,6 +31,8 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     _aguBoot('1 WidgetsFlutterBinding OK');
+
+    await initializeDateFormatting('tr_TR');
 
     FlutterError.onError = (details) {
       FlutterError.presentError(details);

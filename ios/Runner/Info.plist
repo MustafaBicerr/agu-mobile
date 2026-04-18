@@ -28,8 +28,6 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Profil fotoğrafı yüklemek için kamera erişimi gerekir.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Ek dosyaları kaydetmek için fotoğraf kütüphanesine erişim gerekir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Profil fotoğrafı seçmek için galeri erişimi gerekir.</string>
 	<key>NSUserNotificationUsageDescription</key>

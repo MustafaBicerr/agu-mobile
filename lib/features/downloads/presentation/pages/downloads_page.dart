@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../shared/services/local_file_opener.dart';
 import '../../services/download_helper.dart';
 
 /// İndirilen dosyaları listeleyen ve yöneten sayfa.
@@ -28,6 +29,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
     _loadFiles();
   }
 
+  /// Uygulama içi zaman çizelgesi veritabanı; kullanıcıya gösterilmez.
+  static bool _isHiddenInternalFile(File file) =>
+      p.basename(file.path).toLowerCase() == 'timetable.db';
+
   Future<void> _loadFiles() async {
     setState(() => _isLoading = true);
 
@@ -39,7 +44,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
       dir ??= await getApplicationDocumentsDirectory();
 
       final entities = dir.listSync();
-      final files = entities.whereType<File>().toList();
+      final files = entities
+          .whereType<File>()
+          .where((f) => !_isHiddenInternalFile(f))
+          .toList();
 
       // Sıralama
       if (_sortBy == 'date') {
@@ -177,11 +185,13 @@ class _DownloadsPageState extends State<DownloadsPage> {
   }
 
   Future<void> _openFile(File file) async {
-    final result = await OpenFilex.open(file.path);
-    if (result.type != ResultType.done && mounted) {
+    final ok = await LocalFileOpener.open(file.path);
+    if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Dosya açılamadı: ${result.message}'),
+          content: const Text(
+            'Dosya açılamadı. Uygun bir uygulama yok veya dosya erişilemiyor.',
+          ),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
