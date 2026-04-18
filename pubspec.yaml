@@ -1,7 +1,7 @@
 name: agu_mobile
 description: "AGU Mobile cross-platform rebuild."
 publish_to: 'none'
-version: 1.1.9+20
+version: 1.2.1+22
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

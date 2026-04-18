@@ -50,9 +50,6 @@ class _AppBootstrapState extends State<AppBootstrap> {
   /// Soğuk açılışta oturum varken Firestore ön yükleme sürüyor.
   bool _coldPrefetchActive = false;
 
-  /// Girişten sonra yalnızca iş uzun sürerse true (gecikmeli açılır).
-  bool _postLoginLoading = false;
-
   StreamSubscription<User?>? _authSub;
 
   @override
@@ -101,25 +98,21 @@ class _AppBootstrapState extends State<AppBootstrap> {
   }
 
   Future<void> _waitForAuthReady() async {
-    const step = Duration(milliseconds: 100);
-    const maxWait = Duration(seconds: 5);
-    final deadline = DateTime.now().add(maxWait);
-
-    while (DateTime.now().isBefore(deadline)) {
-      if (FirebaseAuth.instance.currentUser != null) return;
-      await Future<void>.delayed(step);
+    try {
+      // Gerçek cihazda kalıcı oturumun geri yüklenmesi emülatöre göre daha geç
+      // gelebilir. İlk auth event'ini beklemek, erken "login" göstermeyi engeller.
+      await FirebaseAuth.instance.authStateChanges().first.timeout(
+        const Duration(seconds: 20),
+      );
+    } on TimeoutException catch (_) {
+      debugPrint('[AppBootstrap] auth resolve timeout; continuing with currentUser');
+    } catch (e, st) {
+      debugPrint('[AppBootstrap] auth resolve error: $e\n$st');
     }
   }
 
   Future<void> _afterLoginPrefetch() async {
     if (!mounted) return;
-
-    // İş ~180 ms içinde biterse yükleme animasyonu hiç gösterilmez; uzun sürerse gösterilir.
-    Timer? showLoadingTimer;
-    showLoadingTimer = Timer(const Duration(milliseconds: 180), () {
-      if (!mounted) return;
-      setState(() => _postLoginLoading = true);
-    });
 
     try {
       await Future.wait<void>([
@@ -128,11 +121,6 @@ class _AppBootstrapState extends State<AppBootstrap> {
       ]).timeout(const Duration(seconds: 45));
     } catch (e, st) {
       debugPrint('[AppBootstrap] post-login prefetch: $e\n$st');
-    } finally {
-      showLoadingTimer.cancel();
-      if (mounted) {
-        setState(() => _postLoginLoading = false);
-      }
     }
   }
 
@@ -145,7 +133,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
       );
     }
 
-    if (_coldPrefetchActive || _postLoginLoading) {
+    if (_coldPrefetchActive) {
       return const startingAnimation();
     }
 
